@@ -580,6 +580,55 @@ BRUTALIST_ITEMS = [
 ]
 
 # ═══════════════════════════════════════════════════════════════════════════
+# COMMUNITY CHANNELS — DFIR-RELEVANT SUBREDDITS
+# ═══════════════════════════════════════════════════════════════════════════
+
+COMMUNITY_CHANNELS = [
+    {
+        "name": "r/computerforensics",
+        "url": "https://www.reddit.com/r/computerforensics/",
+        "members": "60k+",
+        "description": "Case discussions, tool Q&A, and career advice for digital forensics practitioners.",
+        "color": "#0e7490",
+    },
+    {
+        "name": "r/blueteamsec",
+        "url": "https://www.reddit.com/r/blueteamsec/",
+        "members": "45k+",
+        "description": "High-signal defensive security: threat intel, detection engineering, and incident response links.",
+        "color": "#2563eb",
+    },
+    {
+        "name": "r/netsec",
+        "url": "https://www.reddit.com/r/netsec/",
+        "members": "500k+",
+        "description": "Technical information security content — research papers, exploits, tooling, and write-ups.",
+        "color": "#dc2626",
+    },
+    {
+        "name": "r/Malware",
+        "url": "https://www.reddit.com/r/Malware/",
+        "members": "85k+",
+        "description": "Malware analysis, reverse engineering samples, and threat actor discussions.",
+        "color": "#b45309",
+    },
+    {
+        "name": "r/cybersecurity",
+        "url": "https://www.reddit.com/r/cybersecurity/",
+        "members": "1M+",
+        "description": "Broad security community: news, certifications, career paths, and industry happenings.",
+        "color": "#047857",
+    },
+    {
+        "name": "r/ReverseEngineering",
+        "url": "https://www.reddit.com/r/ReverseEngineering/",
+        "members": "200k+",
+        "description": "Reversing tools, CTF write-ups, binary analysis, and low-level debugging techniques.",
+        "color": "#7c3aed",
+    },
+]
+
+# ═══════════════════════════════════════════════════════════════════════════
 # HTML RENDERER
 # ═══════════════════════════════════════════════════════════════════════════
 
@@ -605,8 +654,8 @@ header .sub{color:var(--mut);margin-top:.4rem;font-size:.88rem}
 .stat{background:var(--s1);border:1px solid var(--b);border-radius:10px;padding:.55rem 1.2rem;text-align:center}
 .stat .v{font-size:1.4rem;font-weight:700;color:var(--acc)}.stat .l{font-size:.68rem;color:var(--mut);text-transform:uppercase}
 nav{background:var(--s1);border-bottom:1px solid var(--b);padding:.65rem 1.5rem;display:flex;gap:1.25rem;flex-wrap:wrap;position:sticky;top:0;z-index:100}
-nav a{color:var(--mut);font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;transition:color .15s}
-nav a:hover{color:var(--acc)}
+nav a{font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;text-decoration:none;transition:opacity .15s;white-space:nowrap}
+nav a:hover{opacity:.7}
 main{max-width:1000px;margin:2rem auto;padding:0 1rem 4rem}
 .source-block{margin-bottom:2.5rem}
 .source-head{display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;padding-bottom:.6rem;border-bottom:2px solid var(--b)}
@@ -631,10 +680,21 @@ main{max-width:1000px;margin:2rem auto;padding:0 1rem 4rem}
 .feed-meta{font-size:.73rem;color:var(--mut);margin-top:.25rem;display:flex;gap:.75rem}
 .src-tag{background:var(--s2);border:1px solid var(--b);border-radius:3px;padding:.08rem .35rem;font-size:.68rem;font-weight:600}
 footer{text-align:center;padding:1.5rem;color:var(--mut);font-size:.78rem;border-top:1px solid var(--b);margin-top:2rem}
+.community-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:.9rem;margin-top:.75rem}
+.community-card{background:var(--s1);border-radius:10px;padding:1rem 1.1rem;border-left:4px solid;transition:transform .15s,box-shadow .15s}
+.community-card:hover{transform:translateY(-2px);box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.community-card .cname{font-weight:700;font-size:.95rem;color:var(--acc);margin-bottom:.25rem}
+.community-card .cmembers{font-size:.7rem;color:var(--mut);margin-bottom:.4rem}
+.community-card .cdesc{font-size:.82rem;color:var(--txt);line-height:1.45}
 footer a{color:var(--acc)}
 """
 
 def esc(s): return html.escape(str(s))
+
+def cat_slug(s):
+    """Convert section heading to URL-safe anchor slug. e.g. 'THREAT INTELLIGENCE / HUNTING' → 'threat-intelligence-hunting'"""
+    import re
+    return re.sub(r'[^a-z0-9]+', '-', s.lower()).strip('-')
 
 def render_week(week_data, is_new=False):
     w = week_data
@@ -655,7 +715,9 @@ def render_week(week_data, is_new=False):
         heading = section["heading"]
         items = section["items"]
         color = SECTION_COLORS.get(heading, "#475569")
-        out.append(f'<div class="section-block">')
+        # Add category anchor id only on the latest week so nav links jump to most-recent content
+        sec_id = f' id="cat-{cat_slug(heading)}"' if is_new else ''
+        out.append(f'<div class="section-block"{sec_id}>')
         out.append(f'<div class="sec-head">')
         out.append(f'<span class="sec-label" style="background:{color}">{esc(heading)}</span>')
         out.append(f'<span class="sec-count">{len(items)} items</span>')
@@ -674,16 +736,34 @@ def render_digest():
     grand_total = total_curated + total_feed
     num_sections = len(W12["sections"])
 
-    # Nav by week + feed
-    nav_html = """
-      <a href="#week-12">Week 12</a>
-      <a href="#week-11">Week 11</a>
-      <a href="#week-10">Week 10</a>
-      <a href="#feed">Recent Feed</a>
-    """
+    # Category-based nav: each link jumps to that category in the latest week
+    nav_parts = []
+    for sec in W12["sections"]:
+        slug = cat_slug(sec["heading"])
+        color = SECTION_COLORS.get(sec["heading"], "#475569")
+        # Title-case label: "FORENSIC ANALYSIS" → "Forensic Analysis"
+        label = sec["heading"].replace(" / ", " / ").title().replace(" / ", "/")
+        nav_parts.append(
+            f'<a href="#cat-{slug}" style="color:{color};border-bottom:2px solid {color};padding-bottom:2px">{label}</a>'
+        )
+    nav_parts.append('<a href="#feed" style="color:var(--mut)">Recent Feed</a>')
+    nav_parts.append('<a href="#community" style="color:#f59e0b">Community</a>')
+    nav_html = "\n      ".join(nav_parts)
 
     # Weekly curated sections
     tw4n6_html = render_week(W12, is_new=True) + render_week(W11) + render_week(W10)
+
+    # Community channel cards
+    community_cards = ""
+    for ch in COMMUNITY_CHANNELS:
+        community_cards += (
+            f'<a href="{esc(ch["url"])}" target="_blank" rel="noopener" style="text-decoration:none">'
+            f'<div class="community-card" style="border-color:{esc(ch["color"])}">'
+            f'<div class="cname">{esc(ch["name"])}</div>'
+            f'<div class="cmembers">👥 {esc(ch["members"])} members</div>'
+            f'<div class="cdesc">{esc(ch["description"])}</div>'
+            f'</div></a>'
+        )
 
     # Combined feed cards (start.me + Brutalist, no source labels)
     feed_cards = ""
@@ -711,7 +791,7 @@ def render_digest():
 </head>
 <body>
 <header>
-  <h1>🔭 DFIR Watchtower</h1>
+  <h1>🏰 DFIR Watchtower</h1>
   <p class="sub">Weekly DFIR intelligence digest &mdash; <strong>{DATE_STR}</strong></p>
   <div class="stats">
     <div class="stat"><div class="v">{grand_total}</div><div class="l">Total Links</div></div>
@@ -738,9 +818,20 @@ def render_digest():
   {feed_cards}
 </div>
 
+<!-- ═══ COMMUNITY CHANNELS ═══ -->
+<div class="source-block" id="community">
+  <div class="week-head" style="margin-bottom:.75rem">
+    <h3>Community Channels</h3>
+    <span class="meta">DFIR &amp; security subreddits worth following</span>
+  </div>
+  <div class="community-grid">
+    {community_cards}
+  </div>
+</div>
+
 </main>
 <footer>
-  🔭 <strong>DFIR Watchtower</strong> &mdash; {TIMESTAMP} &mdash;
+  🏰 <strong>DFIR Watchtower</strong> &mdash; {TIMESTAMP} &mdash;
   <a href="https://github.com/forensicfellowship/DFIR_Watchtower">github.com/forensicfellowship/DFIR_Watchtower</a>
 </footer>
 </body>

@@ -16,8 +16,8 @@ header .sub{color:var(--mut);margin-top:.4rem;font-size:.88rem}
 .stat{background:var(--s1);border:1px solid var(--b);border-radius:10px;padding:.55rem 1.2rem;text-align:center}
 .stat .v{font-size:1.4rem;font-weight:700;color:var(--acc)}.stat .l{font-size:.68rem;color:var(--mut);text-transform:uppercase}
 nav{background:var(--s1);border-bottom:1px solid var(--b);padding:.65rem 1.5rem;display:flex;gap:1.25rem;flex-wrap:wrap;position:sticky;top:0;z-index:100}
-nav a{color:var(--mut);font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;transition:color .15s}
-nav a:hover{color:var(--acc)}
+nav a{font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;text-decoration:none;transition:opacity .15s;white-space:nowrap}
+nav a:hover{opacity:.7}
 main{max-width:1000px;margin:2rem auto;padding:0 1rem 4rem}
 .source-block{margin-bottom:2.5rem}
 .source-head{display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;padding-bottom:.6rem;border-bottom:2px solid var(--b)}
@@ -42,6 +42,12 @@ main{max-width:1000px;margin:2rem auto;padding:0 1rem 4rem}
 .feed-meta{font-size:.73rem;color:var(--mut);margin-top:.25rem;display:flex;gap:.75rem}
 .src-tag{background:var(--s2);border:1px solid var(--b);border-radius:3px;padding:.08rem .35rem;font-size:.68rem;font-weight:600}
 footer{text-align:center;padding:1.5rem;color:var(--mut);font-size:.78rem;border-top:1px solid var(--b);margin-top:2rem}
+.community-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:.9rem;margin-top:.75rem}
+.community-card{background:var(--s1);border-radius:10px;padding:1rem 1.1rem;border-left:4px solid;transition:transform .15s,box-shadow .15s}
+.community-card:hover{transform:translateY(-2px);box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.community-card .cname{font-weight:700;font-size:.95rem;color:var(--acc);margin-bottom:.25rem}
+.community-card .cmembers{font-size:.7rem;color:var(--mut);margin-bottom:.4rem}
+.community-card .cdesc{font-size:.82rem;color:var(--txt);line-height:1.45}
 footer a{color:var(--acc)}
 </style>
 </head>
@@ -54,15 +60,18 @@ footer a{color:var(--acc)}
     <div class="stat"><div class="v">393</div><div class="l">Curated Links</div></div>
     <div class="stat"><div class="v">3</div><div class="l">Weeks Covered</div></div>
     <div class="stat"><div class="v">7</div><div class="l">Categories</div></div>
-    <div class="stat"><div class="v">19:09 UTC</div><div class="l">Pulled</div></div>
+    <div class="stat"><div class="v">19:19 UTC</div><div class="l">Pulled</div></div>
   </div>
 </header>
-<nav>
-      <a href="#week-12">Week 12</a>
-      <a href="#week-11">Week 11</a>
-      <a href="#week-10">Week 10</a>
-      <a href="#feed">Recent Feed</a>
-    </nav>
+<nav><a href="#cat-forensic-analysis" style="color:#0e7490;border-bottom:2px solid #0e7490;padding-bottom:2px">Forensic Analysis</a>
+      <a href="#cat-threat-intelligence-hunting" style="color:#dc2626;border-bottom:2px solid #dc2626;padding-bottom:2px">Threat Intelligence/Hunting</a>
+      <a href="#cat-upcoming-events" style="color:#7c3aed;border-bottom:2px solid #7c3aed;padding-bottom:2px">Upcoming Events</a>
+      <a href="#cat-presentations-podcasts" style="color:#2563eb;border-bottom:2px solid #2563eb;padding-bottom:2px">Presentations/Podcasts</a>
+      <a href="#cat-malware" style="color:#b45309;border-bottom:2px solid #b45309;padding-bottom:2px">Malware</a>
+      <a href="#cat-miscellaneous" style="color:#047857;border-bottom:2px solid #047857;padding-bottom:2px">Miscellaneous</a>
+      <a href="#cat-software-updates" style="color:#1d4ed8;border-bottom:2px solid #1d4ed8;padding-bottom:2px">Software Updates</a>
+      <a href="#feed" style="color:var(--mut)">Recent Feed</a>
+      <a href="#community" style="color:#f59e0b">Community</a></nav>
 <main>
 
 <!-- ═══ WEEKLY CURATED ═══ -->
@@ -72,7 +81,7 @@ footer a{color:var(--acc)}
 <h3>Week 12 – 2026 <span style="background:#134e4a;color:#6ee7b7;font-size:.62rem;font-weight:700;padding:.1rem .4rem;border-radius:4px;text-transform:uppercase;vertical-align:middle">LATEST</span></h3>
 <span class="meta">📅 2026-03-22 &middot; 182 links</span>
 </div>
-<div class="section-block">
+<div class="section-block" id="cat-forensic-analysis">
 <div class="sec-head">
 <span class="sec-label" style="background:#0e7490">FORENSIC ANALYSIS</span>
 <span class="sec-count">6 items</span>
@@ -85,7 +94,7 @@ footer a{color:var(--acc)}
 <li><a href="https://www.stark4n6.com/2026/03/bdc-more-battery-temps-charging-stats.html" target="_blank" rel="noopener">BDC – More Battery Temps &amp; Charging Stats for iOS (Stark 4N6)</a></li>
 <li><a href="https://systemweakness.com/tracking-lockbit-through-memory-forensics-a0ba37aba21c" target="_blank" rel="noopener">Tracking LockBit Through Memory Forensics</a></li>
 </ul></div>
-<div class="section-block">
+<div class="section-block" id="cat-threat-intelligence-hunting">
 <div class="sec-head">
 <span class="sec-label" style="background:#dc2626">THREAT INTELLIGENCE / HUNTING</span>
 <span class="sec-count">97 items</span>
@@ -189,7 +198,7 @@ footer a{color:var(--acc)}
 <li><a href="https://www.welivesecurity.com/en/eset-research/edr-killers-explained-beyond-the-drivers/" target="_blank" rel="noopener">EDR killers explained: Beyond the drivers (WeLiveSecurity / ESET)</a></li>
 <li><a href="https://www.wiz.io/blog/trivy-compromised-teampcp-supply-chain-attack" target="_blank" rel="noopener">Trivy Compromised: Everything You Need to Know (Wiz)</a></li>
 </ul></div>
-<div class="section-block">
+<div class="section-block" id="cat-upcoming-events">
 <div class="sec-head">
 <span class="sec-label" style="background:#7c3aed">UPCOMING EVENTS</span>
 <span class="sec-count">5 items</span>
@@ -201,7 +210,7 @@ footer a{color:var(--acc)}
 <li><a href="https://www.magnetforensics.com/resources/s4e3-deducing-the-duplications-understanding-duplicated-data-in-file-systems/" target="_blank" rel="noopener">Magnet Forensics – Mobile Unpacked S4:E3 // Deducing the duplications</a></li>
 <li><a href="https://www.linkedin.com/events/7438173815626641409/" target="_blank" rel="noopener">SANS – 2026 Threat Landscape: Turning Threat Intelligence into Analytic Advantage</a></li>
 </ul></div>
-<div class="section-block">
+<div class="section-block" id="cat-presentations-podcasts">
 <div class="sec-head">
 <span class="sec-label" style="background:#2563eb">PRESENTATIONS / PODCASTS</span>
 <span class="sec-count">15 items</span>
@@ -223,7 +232,7 @@ footer a{color:var(--acc)}
 <li><a href="https://mcsi.io/root-cause-analysis-series" target="_blank" rel="noopener">Root Cause Analysis Series Part 1-4 (Mossé Cyber Security Institute)</a></li>
 <li><a href="https://parsingthetruth.com/e43-karen-read-jessica-hyde/" target="_blank" rel="noopener">Parsing The Truth: One Byte at a Time Podcast S1 E43: Karen Read – Jessica Hyde Testimony</a></li>
 </ul></div>
-<div class="section-block">
+<div class="section-block" id="cat-malware">
 <div class="sec-head">
 <span class="sec-label" style="background:#b45309">MALWARE</span>
 <span class="sec-count">22 items</span>
@@ -252,7 +261,7 @@ footer a{color:var(--acc)}
 <li><a href="https://cocomelonc.github.io/malware/2026/03/macos-persistence-6-pam.html" target="_blank" rel="noopener">MacOS malware persistence 6: PAM module injection (Zhassulan Zhussupov)</a></li>
 <li><a href="https://www.zscaler.com/blogs/security-research/technical-analysis-snappyclient" target="_blank" rel="noopener">Technical Analysis of SnappyClient (ZScaler)</a></li>
 </ul></div>
-<div class="section-block">
+<div class="section-block" id="cat-miscellaneous">
 <div class="sec-head">
 <span class="sec-label" style="background:#047857">MISCELLANEOUS</span>
 <span class="sec-count">22 items</span>
@@ -281,7 +290,7 @@ footer a{color:var(--acc)}
 <li><a href="https://www.amazon.com/dance-red-blue-koifman/" target="_blank" rel="noopener">My book, &#x27;A Dance of Red and Blue&#x27; is out! (Daniel Koifman)</a></li>
 <li><a href="https://sentinel.blog/2026/03/sentinel-as-code-2026-update/" target="_blank" rel="noopener">Sentinel-As-Code: The 2026 Update (sentinel.blog / TobyG)</a></li>
 </ul></div>
-<div class="section-block">
+<div class="section-block" id="cat-software-updates">
 <div class="sec-head">
 <span class="sec-label" style="background:#1d4ed8">SOFTWARE UPDATES</span>
 <span class="sec-count">15 items</span>
@@ -634,9 +643,20 @@ footer a{color:var(--acc)}
   <div class="feed-card"><a href="https://medium.com/@boutnaru/the-linux-security-journey-nosuid-no-set-uid-file-system-support-7eb042c1dcbd" target="_blank" rel="noopener">The Linux Security Journey — nosuid (No Set UID) File System Support</a><div class="feed-meta"><span>🗓 2026-03-28</span></div></div><div class="feed-card"><a href="https://medium.com/@cyberengage.org/system-configuration-file-shares-offline-caching-e0ad9096b3a7" target="_blank" rel="noopener">System Configuration: File Shares &amp; Offline Caching</a><div class="feed-meta"><span>🗓 2026-03-27</span></div></div><div class="feed-card"><a href="https://detect.fyi/a-detection-researcher-mindset-dcsync-t1003-006-2" target="_blank" rel="noopener">A Detection Researcher Mindset — DCSYNC T1003.006</a><div class="feed-meta"><span>🗓 2026-03-27</span></div></div><div class="feed-card"><a href="https://thesisfriday.com/thesis-friday-20-project-stark-forensic-reconstruction-of-the-carplay-handshake/" target="_blank" rel="noopener">Thesis Friday #20: Project Stark – Forensic Reconstruction of the CarPlay Handshake</a><div class="feed-meta"><span>🗓 2026-03-27</span></div></div><div class="feed-card"><a href="https://aboutdfir.com/infosec-news-nuggets-03-27-2026/" target="_blank" rel="noopener">InfoSec News Nuggets 03/27/2026 (AboutDFIR)</a><div class="feed-meta"><span>🗓 2026-03-27</span></div></div><div class="feed-card"><a href="https://cellebrite.com/en/blog/digital-investigations-private-sector-trends-2026/" target="_blank" rel="noopener">From Digital Investigations to Business Resilience: Key Private Sector Trends for 2026 (Cellebrite)</a><div class="feed-meta"><span>🗓 2026-03-27</span></div></div><div class="feed-card"><a href="https://blog.elcomsoft.com/2026/03/arrested-by-an-algorithm/" target="_blank" rel="noopener">Arrested by AI (Elcomsoft Blog)</a><div class="feed-meta"><span>🗓 2026-03-27</span></div></div><div class="feed-card"><a href="https://medium.com/@boutnaru/the-windows-security-journey-rdp-public-mode-c4f3125c0293" target="_blank" rel="noopener">The Windows Security Journey — RDP Public Mode</a><div class="feed-meta"><span>🗓 2026-03-27</span></div></div><div class="feed-card"><a href="https://righteousit.com/2026/03/27/linux-forensic-scenario/" target="_blank" rel="noopener">Linux Forensic Scenario (RighteousIT)</a><div class="feed-meta"><span>🗓 2026-03-27</span></div></div><div class="feed-card"><a href="https://detect.fyi/ghost-in-lsass-detecting-kslkatz-credential-dumping-framework-8645f246aec9" target="_blank" rel="noopener">Ghost in LSASS: Detecting KslKatz Credential Dumping Framework</a><div class="feed-meta"><span>🗓 2026-03-27</span></div></div><div class="feed-card"><a href="https://cellebrite.com/en/resources/webinars/the-network-episode-4/" target="_blank" rel="noopener">Episode 4: The Network — Cellebrite Webinar Series</a><div class="feed-meta"><span>🗓 2026-03-27</span></div></div><div class="feed-card"><a href="https://www.magnetforensics.com/blog/bridging-the-air-gap-strengthening-mobile-workflows-with-graykey-fastrak-and-axiom-express-extraction/" target="_blank" rel="noopener">Bridging the Air Gap: Graykey Fastrak &amp; Axiom Express Extraction (Magnet Forensics)</a><div class="feed-meta"><span>🗓 2026-03-26</span></div></div><div class="feed-card"><a href="https://www.hackingarticles.in/active-directory-penetration-testing-with-bloodyad/" target="_blank" rel="noopener">Active Directory Penetration Testing with BloodyAD</a><div class="feed-meta"><span>🗓 2026-03-26</span></div></div><div class="feed-card"><a href="https://www.reddit.com/r/computerforensics/comments/1s4jlcs/" target="_blank" rel="noopener">How are we pulling iMessages from iCloud? (r/computerforensics)</a><div class="feed-meta"><span>🗓 2026-03-26</span></div></div><div class="feed-card"><a href="https://www.magnetforensics.com/blog/tool-proliferation-in-dfir-why-our-toolkits-keep-growing-and-what-that-really-means/" target="_blank" rel="noopener">Tool Proliferation in DFIR: Why Our Toolkits Keep Growing (Magnet Forensics)</a><div class="feed-meta"><span>🗓 2026-03-26</span></div></div><div class="feed-card"><a href="https://aboutdfir.com/infosec-news-nuggets-03-26-2026/" target="_blank" rel="noopener">InfoSec News Nuggets 03/26/2026 (AboutDFIR)</a><div class="feed-meta"><span>🗓 2026-03-26</span></div></div><div class="feed-card"><a href="https://www.bleepingcomputer.com/news/security/new-infinity-stealer-malware-grabs-macos-data-via-clickfix-lures/" target="_blank" rel="noopener">New Infinity Stealer malware grabs macOS data via ClickFix lures</a></div><div class="feed-card"><a href="https://www.bleepingcomputer.com/news/security/backdoored-telnyx-pypi-package-pushes-malware-hidden-in-wav-audio/" target="_blank" rel="noopener">Backdoored Telnyx PyPI package pushes malware hidden in WAV audio</a></div><div class="feed-card"><a href="https://securityaffairs.com/shinyhunters-european-commission" target="_blank" rel="noopener">ShinyHunters: 350GB+ stolen in cyberattack on the European Commission (detected Mar 24)</a></div><div class="feed-card"><a href="https://www.politico.com/news/2026/03/28/dhs-cisa-staffers-cleared-polygraph" target="_blank" rel="noopener">DHS clears seven CISA staffers; polygraph details on acting director emerge</a></div><div class="feed-card"><a href="https://news.ycombinator.com/item?id=patel_email_hacked" target="_blank" rel="noopener">DOJ confirms FBI Director Kash Patel&#x27;s personal email was hacked (Iran-linked)</a></div><div class="feed-card"><a href="https://news.ycombinator.com/item?id=github_private_repos" target="_blank" rel="noopener">If you don&#x27;t opt out by Apr 24, GitHub will train on your private repos</a></div><div class="feed-card"><a href="https://daringfireball.net/linked/lockdown-mode" target="_blank" rel="noopener">Apple Says It&#x27;s Not Aware of Lockdown Mode Ever Having Been Exploited</a></div><div class="feed-card"><a href="https://it.slashdot.org/story/google-pq-2029" target="_blank" rel="noopener">Google Moves Post-Quantum Encryption Timeline Up To 2029</a></div><div class="feed-card"><a href="https://it.slashdot.org/story/ec-amazon-hack" target="_blank" rel="noopener">European Commission Investigating Breach After Amazon Cloud Account Hack</a></div><div class="feed-card"><a href="https://linux.slashdot.org/story/kroah-hartman-ai-tools" target="_blank" rel="noopener">Linux Maintainer Greg Kroah-Hartman Says AI Tools Now Useful, Finding Real Bugs</a></div><div class="feed-card"><a href="https://news.ycombinator.com/item?id=wh_app_decompile" target="_blank" rel="noopener">I decompiled the White House&#x27;s new app</a></div><div class="feed-card"><a href="https://arstechnica.com/tech-policy/2026/03/av1-dolby-snapchat/" target="_blank" rel="noopener">AV1&#x27;s Open, Royalty-Free Promise In Question As Dolby Sues Snapchat Over Codec</a></div><div class="feed-card"><a href="https://www.theregister.com/2026/03/28/microsoft_bsod/" target="_blank" rel="noopener">To BSOD or not to BSOD? Only Microsoft knows the answer</a></div><div class="feed-card"><a href="https://www.phoronix.com/news/Gedit-Bans-AI-Contributions" target="_blank" rel="noopener">Gedit Aims For More Frequent Releases, Bans AI / LLM Contributions</a></div><div class="feed-card"><a href="https://it.slashdot.org/story/windows-crash-rate" target="_blank" rel="noopener">Windows PCs Crash Three Times As Often As Macs, Report Says</a></div>
 </div>
 
+<!-- ═══ COMMUNITY CHANNELS ═══ -->
+<div class="source-block" id="community">
+  <div class="week-head" style="margin-bottom:.75rem">
+    <h3>Community Channels</h3>
+    <span class="meta">DFIR &amp; security subreddits worth following</span>
+  </div>
+  <div class="community-grid">
+    <a href="https://www.reddit.com/r/computerforensics/" target="_blank" rel="noopener" style="text-decoration:none"><div class="community-card" style="border-color:#0e7490"><div class="cname">r/computerforensics</div><div class="cmembers">👥 60k+ members</div><div class="cdesc">Case discussions, tool Q&amp;A, and career advice for digital forensics practitioners.</div></div></a><a href="https://www.reddit.com/r/blueteamsec/" target="_blank" rel="noopener" style="text-decoration:none"><div class="community-card" style="border-color:#2563eb"><div class="cname">r/blueteamsec</div><div class="cmembers">👥 45k+ members</div><div class="cdesc">High-signal defensive security: threat intel, detection engineering, and incident response links.</div></div></a><a href="https://www.reddit.com/r/netsec/" target="_blank" rel="noopener" style="text-decoration:none"><div class="community-card" style="border-color:#dc2626"><div class="cname">r/netsec</div><div class="cmembers">👥 500k+ members</div><div class="cdesc">Technical information security content — research papers, exploits, tooling, and write-ups.</div></div></a><a href="https://www.reddit.com/r/Malware/" target="_blank" rel="noopener" style="text-decoration:none"><div class="community-card" style="border-color:#b45309"><div class="cname">r/Malware</div><div class="cmembers">👥 85k+ members</div><div class="cdesc">Malware analysis, reverse engineering samples, and threat actor discussions.</div></div></a><a href="https://www.reddit.com/r/cybersecurity/" target="_blank" rel="noopener" style="text-decoration:none"><div class="community-card" style="border-color:#047857"><div class="cname">r/cybersecurity</div><div class="cmembers">👥 1M+ members</div><div class="cdesc">Broad security community: news, certifications, career paths, and industry happenings.</div></div></a><a href="https://www.reddit.com/r/ReverseEngineering/" target="_blank" rel="noopener" style="text-decoration:none"><div class="community-card" style="border-color:#7c3aed"><div class="cname">r/ReverseEngineering</div><div class="cmembers">👥 200k+ members</div><div class="cdesc">Reversing tools, CTF write-ups, binary analysis, and low-level debugging techniques.</div></div></a>
+  </div>
+</div>
+
 </main>
 <footer>
-  🏰 <strong>DFIR Watchtower</strong> &mdash; 2026-03-29 19:09 UTC &mdash;
+  🏰 <strong>DFIR Watchtower</strong> &mdash; 2026-03-29 19:19 UTC &mdash;
   <a href="https://github.com/forensicfellowship/DFIR_Watchtower">github.com/forensicfellowship/DFIR_Watchtower</a>
 </footer>
 </body>
