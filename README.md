@@ -9,10 +9,6 @@ Live at: **[forensicfellowship.github.io/DFIR_Watchtower](https://forensicfellow
 
 DFIR Watchtower monitors the top DFIR blogs, threat intelligence feeds, and forensic tool update sources, then compiles everything into a single dark-mode HTML digest — published every Monday morning.
 
-**Current sources:**
-- **This Week in 4n6** — curated weekly roundup (3 weeks of history, ~400 links across 7 sections)
-- **start.me DFIR Feed** — community-curated DFIR blog aggregator
-- **Brutalist Report Tech** — raw tech/security headline feed
 
 ## Sections Covered
 
