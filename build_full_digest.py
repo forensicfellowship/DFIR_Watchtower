@@ -32,8 +32,8 @@ COMMUNITY_CHANNELS = [
 
 # ─── WEEK 13 DATA (2026-03-29) ────────────────────────────────────────────────
 W_LATEST = {
-    "name": "Week 13 – 2026",
-    "date": "March 29, 2026",
+    "name": "29 March 2026",
+    "date": "This Week in 4n6",
     "url": "https://thisweekin4n6.com/2026/03/29/week-13-2026/",
     "sections": [
         {
@@ -178,8 +178,8 @@ W_LATEST = {
 
 # ─── WEEK 12 DATA (2026-03-22) ────────────────────────────────────────────────
 W_PREV1 = {
-    "name": "Week 12 – 2026",
-    "date": "March 22, 2026",
+    "name": "22 March 2026",
+    "date": "This Week in 4n6",
     "url": "https://thisweekin4n6.com/2026/03/22/week-12-2026/",
     "sections": [
         {
@@ -300,8 +300,8 @@ W_PREV1 = {
 
 # ─── WEEK 11 DATA (2026-03-15) ────────────────────────────────────────────────
 W_PREV2 = {
-    "name": "Week 11 – 2026",
-    "date": "March 15, 2026",
+    "name": "15 March 2026",
+    "date": "This Week in 4n6",
     "url": "https://thisweekin4n6.com/2026/03/15/week-11-2026/",
     "sections": [
         {
@@ -434,7 +434,7 @@ W_PREV2 = {
 # ─── START.ME FEED ITEMS ─────────────────────────────────────────────────────
 STARTME_ITEMS = [
     ["Impacket for Pentester: DACLEdit", "https://www.hackingarticles.in/impacket-for-pentester-dacledit/"],
-    ["Week 13 – 2026 (This Week in 4n6)", "https://thisweekin4n6.com/2026/03/29/week-13-2026/"],
+    ["29 March 2026 (This Week in 4n6)", "https://thisweekin4n6.com/2026/03/29/week-13-2026/"],
     ["The Linux Concept Journey — Extended File Attributes (xattr)", "https://medium.com/@boutnaru/the-linux-concept-journey-extended-file-attributes-xattr-179daa4f1b92"],
     ["iOS Lockdown mode and forensic analysis: a technical perspective", "https://andreafortuna.org/2026/03/29/ios-lockdown-mode-forensics/"],
     ["The Linux Security Journey — nosuid (No Set UID) File System Support", "https://medium.com/@boutnaru/the-linux-security-journey-nosuid-no-set-uid-file-system-support-7eb042c1dcbd"],
