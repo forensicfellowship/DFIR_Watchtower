@@ -1,329 +1,735 @@
 #!/usr/bin/env python3
-"""DFIR Watchtower — Weekly Digest Builder"""
-import re, html as html_mod
-from pathlib import Path
+"""
+DFIR Watchtower — Full Digest Builder
+Sources: This Week in 4n6 (Weeks 10-12), start.me Blog Feed, Brutalist Report Tech
+Scraped live 2026-03-28 via Chrome browser extension
+"""
+import html
 from datetime import datetime, timezone
+from pathlib import Path
 
-# ─── RAW SCRAPED DATA (page-text format: "SEC:HEADING title URL title URL ...") ─
+NOW = datetime.now(timezone.utc)
+DATE_STR = NOW.strftime("%Y-%m-%d")
+TIMESTAMP = NOW.strftime("%Y-%m-%d %H:%M UTC")
 
-W13_RAW = """WEEK:Week 13 – 2026|2026-03-29 SEC:FORENSIC ANALYSIS Shall I describe it to you …? ALEAPP Live Data Parsing https://cp-df.com/en/blog/dumpsys.html Android Any.do https://forensafe.com/blogs/android-anydo.html Exploring Apple Intelligence Artifacts in iOS https://dig-fo4-6.blogspot.com/2026/03/exploring-apple-intelligence-artifacts.html Linux Forensic Scenario https://righteousit.com/2026/03/27/linux-forensic-scenario/ [13 Cubed] Trouble at ACME Challenge — Investigating Windows Endpoint https://infosecwriteups.com/13-cubed-trouble-at-acme-challenge-investigating-windows-endpoint-9cada1bcd47b FAT CAT (Forensics)— KJSSE CTF 3.0 https://infosecwriteups.com/fat-cat-forensics-kjsse-ctf-3-0-389909256dc5 Old Dog, New Tricks – Lost Apples 2.0 https://thebinaryhick.blog/2026/03/22/old-dog-new-tricks-lost-apples-2-0/ MSAB Mobile Forensics Summit CTF 2026 Android CTF Writeup https://matthewplascencia.substack.com/p/msab-mobile-forensics-summit-ctf Bloomin' Biomes – Meet Sedgwick https://northloopconsulting.com/blog/f/bloomin-biomes---meet-sedgwick ShellBags and User Navigation: What Windows Remembers About Exploration https://sethenoka.com/shellbags-and-user-navigation-what-windows-remembers-about-exploration/ Kubernetes forensics 1/3 : what the container ? https://www.synacktiv.com/publications/kubernetes-forensics-13-what-the-container.html SEC:THREAT INTELLIGENCE/HUNTING ESC8s and Where to Find Them http://abdulmhsblog.com/posts/esc8andfindingwebenrollmentendpoints/ CanisterWorm Gets Teeth: TeamPCP's Kubernetes Wiper Targets Iran https://www.aikido.dev/blog/teampcp-stage-payload-canisterworm-iran Popular telnyx package compromised on PyPI by TeamPCP https://www.aikido.dev/blog/telnyx-pypi-compromised-teampcp-canisterworm The AI Malware Surge: Behavior, Attribution, and Defensive Readiness https://arcticwolf.com/resources/blog/the-ai-malware-surge-behavior-attribution-and-defensive-readiness/ What Does MITRE ATT&CK Coverage Really Mean? https://www.attackiq.com/2026/03/10/what-does-mitre-attack-coverage-really-mean/ Ransomware Attacks Against the US: 2026 Insights https://www.bitdefender.com/en-us/blog/businessinsights/ransomware-attacks-targeting-us-organizations-2026 'CanisterWorm' Springs Wiper Attack Targeting Iran https://krebsonsecurity.com/2026/03/canisterworm-springs-wiper-attack-targeting-iran/ Under CTRL: Dissecting a Previously Undocumented Russian .Net Access Framework https://censys.com/blog/under-ctrl-dissecting-a-previously-undocumented-russian-net-access-framework/ Credential Phishing https://ogmini.github.io/2026/03/26/Credential-Phishing.html 2025 Talos Year in Review: Speed, scale, and staying power https://blog.talosintelligence.com/2025-talos-year-in-review-speed-scale-and-staying-power/ p6.arpa Wildcard Abuse: Hunting Phishing Infrastructure Across IPv6 Prefixes https://www.cloudsek.com/blog/p6-arpa-wildcard-abuse-hunting-phishing-infrastructure-across-ipv6-prefixes Honey for Hackers: A Study of Attacks Targeting the Recent CVE-2026-21962 https://www.cloudsek.com/blog/honey-for-hackers-a-study-of-attacks-targeting-cve-2026-21962 The Unintentional Enabler: How Cloudflare Services are Abused for Credential Theft and Malware Distribution https://cofense.com/blog/how-cloudflare-services-are-abused-for-credential-theft-and-malware-distribution Xiaomi Phishing Attempt – Red Flags You Can't Afford to Ignore https://cofense.com/blog/xiaomi-phishing-attempt-red-flags-you-can-t-afford-to-ignore Common Entra ID Security Assessment Findings – Part 1 https://blog.compass-security.com/2026/03/common-entra-id-security-assessment-findings-part-1-foreign-enterprise-applications-with-privileged-api-permissions/ Understanding and detecting process injection with Sysmon https://www.cyberbit.com/security-operations/process-injection-with-sysmon/ TeamPCP Injects Credential Stealer Into Trivy Releases https://cybersecsentinel.com/teampcp-injects-credential-stealer-into-trivy-releases-and-spreads-to-npm-via-canisterworm/ The Energy Sector's Ransomware Nightmare https://cyble.com/blog/energy-sector-ransomware-attack-report/ China's APT41 and the Expanding Enterprise Attack Surface https://cyble.com/blog/apt41-enterprise-attack-surface-cyber-risk/ LiteLLM compromised on PyPI: Tracing the March 2026 TeamPCP supply chain campaign https://securitylabs.datadoghq.com/articles/litellm-compromised-pypi-teampcp-supply-chain-campaign/ Detecting RegPwn by Behavior, Not Binary https://detect.fyi/detecting-regpwn-by-behavior-not-binary-1614ff829fc0 Ghost in LSASS: Detecting KslKatz Credential Dumping Framework https://detect.fyi/ghost-in-lsass-detecting-kslkatz-credential-dumping-framework-8645f246aec9 A Detection Researcher Mindset — DCSYNC T1003.006 https://detect.fyi/a-detection-researcher-mindset-dcsync-t1003-006-2532bddefbf5 UK sanctions Xinbi marketplace https://www.elliptic.co/blog/uk-sanctions-xinbi-marketplace-and-entities-connected-to-8-park-in-latest-crackdown-on-illicit-cryptoassets EtherRAT & SYS_INFO Module: C2 on Ethereum (EtherHiding) https://www.esentire.com/blog/etherrat-sys-info-module-c2-on-ethereum-etherhiding-target-selection-cdn-like-beacons Leak Bazaar: Inside the New Criminal Platform Turning Stolen Data Into a Structured Marketplace https://flare.io/learn/resources/blog/leak-bazaar North Korean IT Worker Employment Fraud https://flare.io/learn/resources/blog/north-korean-it-worker-employment-fraud Infostealers Doesn't Discriminate: 10,000 Logs Show Who's Getting Hit https://flare.io/learn/resources/blog/victim-profiling-stealer-malware Torg Grabber: Anatomy of a New Credential Stealer https://www.gendigital.com/blog/insights/research/torg-grabber-credential-stealer-analysis The Reservation Hijack Scam: How attackers hijack hotel accounts https://www.gendigital.com/blog/insights/research/reservation-hijack-scam Honeytokens on the Developer Workstation https://blog.gitguardian.com/honeytokens-on-the-developer-workstation/ Trivy's March Supply Chain Attack Shows Where Secret Exposure Hurts Most https://blog.gitguardian.com/trivys-march-supply-chain-attack-shows-where-secret-exposure-hurts-most/ The Team PCP Snowball Effect: A Quantitative Analysis https://blog.gitguardian.com/team-pcp-snowball-analysis/ M-Trends 2026: Data, Insights, and Strategies From the Frontlines https://cloud.google.com/blog/topics/threat-intelligence/m-trends-2026/ Ghost Fleet: Half of All New Scanning IPs Geolocated to Hong Kong https://www.greynoise.io/blog/ghost-fleet-half-new-scanning-ips-geolocated-to-hong-kong Bucklog's Machine: Inside a Kubernetes Scanning Fleet https://www.labs.greynoise.io/grimoire/2026-03-23-bucklog-k8s/ Cloud Phones: The Invisible Threat https://www.group-ib.com/blog/cloud-phones-invisible-threat/ The New Era of Initial Access: How Infostealer Lookup Services are Changing Cybercrime https://www.infostealers.com/article/the-new-era-of-initial-access-how-infostealer-lookup-services-are-changing-cybercrime/ Threat Actors Abuse Railway.com PaaS as Microsoft 365 Token Attack Infrastructure https://www.huntress.com/blog/railway-paas-m365-token-replay-campaign No Reach, No Risk: The Keitaro Abuse in Modern Cybercrime Distribution https://www.infoblox.com/blog/threat-intelligence/no-reach-no-risk-the-keitaro-abuse-in-modern-cybercrime-distribution/ CVE-2025-68613: Zerobot botnet exploits critical vulnerability impacting n8n https://www.intel471.com/blog/cve-2025-68613-zerobot-botnet-exploits-critical-vulnerability-impacting-n8n-ai-orchestration-platform What Should I Ingest Into My SIEM? https://isaacdunham.github.io/posts/what-should-i-ingest-into-my-siem/ Guidance for detecting the Trivy supply chain compromise https://www.microsoft.com/en-us/security/blog/2026/03/24/detecting-investigating-defending-against-trivy-supply-chain-compromise/ Inside Pay2Key: Technical Analysis of a Linux Ransomware Variant https://www.morphisec.com/blog/inside-pay2key-technical-analysis-of-a-linux-ransomware-variant/ LiteLLM Supply Chain Compromise https://www.netspi.com/blog/executive-blog/ai-ml-pentesting/litellm-supply-chain-compromise/ Hunting for Warlock's TTPs https://www.knowyouradversary.ru/2026/03/383-hunting-for-warlocks-tactics.html TeamPCP Supply Chain Campaign: A March 2026 Retrospective https://opensourcemalware.com/blog/teampcp-aquasec-com-github-org-compromise DragonForce Ransomware: Exfiltration Cartel Analysis https://osintteam.blog/dragonforce-ransomware-exfiltration-cartel-analysis-privacy-insight-solutions-8737444c2e32 Data vs Information vs Intelligence: A CTI Analyst's Guide https://osintteam.blog/data-vs-information-vs-intelligence-a-cti-analysts-guide-to-communicating-what-matters-82b8238ba7c1 Hidden Persistence in Cloud Identity Attacks https://osintteam.blog/hidden-persistence-in-cloud-identity-attacks-3a000004bd6a WMI Event Consumer Persistence: How APT29 Achieves Fileless Persistence https://osintteam.blog/wmi-event-consumer-persistence-how-apt29-achieves-fileless-persistence-part-1-c93477ea7025 LiteLLM Malware: Malicious PyPI Versions Steal Cloud and Crypto Credentials https://www.ox.security/blog/litellm-malware-malicious-pypi-versions-steal-cloud-and-crypto-credentials/ Threat Brief: Recruiting Scheme Impersonating Palo Alto Networks https://unit42.paloaltonetworks.com/phishing-attackers-pose-as-panw-recruiters/ Converging Interests: Analysis of Threat Clusters Targeting Southeast Asian Government https://unit42.paloaltonetworks.com/espionage-campaigns-target-se-asian-government-org/ BPFdoor in Telecom Networks: Sleeper Cells in the Backbone https://www.rapid7.com/blog/post/tr-bpfdoor-telecom-networks-sleeper-cells-threat-research-report/ ClickFix Campaigns Targeting Windows and macOS https://www.recordedfuture.com/research/clickfix-campaigns-targeting-windows-and-macos Scarlet Goldfinch's year in ClickFix https://redcanary.com/blog/threat-intelligence/scarlet-goldfinch-clickfix/ Pro-Iranian Nasir Security Targeting The Energy Sector https://www.resecurity.com/blog/article/pro-iranian-nasir-security-is-targeting-the-energy-sector-in-the-middle-east Following Gamaredons Infrastructure Rotations using Kraken https://blog.synapticsystems.de/following-gamaredons-infrastructure-rotations-using-kraken/ SANS ISC: TeamPCP Supply Chain Campaign Updates https://isc.sans.edu/diary/rss/32834 Novel WebRTC skimmer bypasses security controls at car maker https://sansec.io/research/webrtc-skimmer Anatomy of a Cyber World Global Report 2026 https://securelist.com/global-report-security-services-2026/119233/ Silver Fox: The Only Tax Audit Where the Fine Print Installs Malware https://blog.sekoia.io/silver-fox-the-only-tax-audit-where-the-fine-print-installs-malware/ Trivy Supply Chain Attack Expands to Compromised Docker Images https://socket.dev/blog/trivy-docker-images-compromised TeamPCP Is Systematically Targeting Security Tools Across the OSS Ecosystem https://socket.dev/blog/teampcp-targeting-security-tools-across-oss-ecosystem Widespread GitHub Campaign Uses Fake VS Code Security Alerts to Deliver Malware https://socket.dev/blog/widespread-github-campaign-uses-fake-vs-code-security-alerts-to-deliver-malware TeamPCP Compromises Telnyx Python SDK https://socket.dev/blog/telnyx-python-sdk-compromised NICKEL ALLEY strategy: Fake it 'til you make it https://www.sophos.com/en-us/blog/nickel-alley-strategy-fake-it-til-you-make-it CanisterWorm: How a Self-Propagating npm Worm Is Spreading Backdoors https://www.stepsecurity.io/blog/canisterworm-how-a-self-propagating-npm-worm-is-spreading-backdoors-across-the-ecosystem Lessons from the Stryker Incident https://www.sygnia.co/threat-reports-and-advisories/identity-control-plane-attack-stryker/ The Ghost SPN Attack: Catching Stealthy Kerberoasting https://www.trellix.com/blogs/research/ghost-spn-attack-kerberoasting-detection-trellix-ndr/ Pawn Storm Campaign Deploys PRISMEX https://www.trendmicro.com/en_us/research/26/c/pawn-storm-targets-govt-infra.html Your AI Gateway Was a Backdoor: Inside the LiteLLM Supply Chain Compromise https://www.trendmicro.com/en_us/research/26/c/inside-litellm-supply-chain-compromise.html Building a Detection Foundation: Part 4 – Sysmon https://trustedsec.com/blog/building-a-detection-foundation-part-4-sysmon Detecting Sliver C2: When Advanced Beaconing Tries to Hide in Plain Sight https://www.vectra.ai/blog/detecting-sliver-c2-when-advanced-beaconing-tries-to-hide-in-plain-sight The Sequels Are Never As Good (Citrix NetScaler CVE-2026-3055) https://labs.watchtowr.com/the-sequels-are-never-as-good-but-were-still-in-pain-citrix-netscaler-cve-2026-3055-memory-overread/ KICS GitHub Action Compromised: TeamPCP Strikes Again https://www.wiz.io/blog/teampcp-attack-kics-github-action Техника Dead Drop Resolver в Spotify и Chess https://rt-solar.ru/solar-4rays/blog/6482/ SEC:UPCOMING EVENTS BHIS – Talkin' Bout [infosec] News 2026-03-30 https://www.youtube.com/watch?v=infosec Episode 4: The Network https://cellebrite.com/en/resources/webinars/the-network-episode-4/ Episode 3: The Digital Trail https://cellebrite.com/en/resources/webinars/digital-trail-episode-3/ Episode 2: The Insider https://cellebrite.com/en/resources/webinars/the-insider-episode-2/ Bridging the air gap: Accelerating mobile forensics https://www.magnetforensics.com/resources/bridging-the-air-gap-accelerating-mobile-forensics-in-secure-offline-labs/ Legal Unpacked S1:E6 // AI on trial: Understanding AI for lawyers https://www.magnetforensics.com/resources/legal-unpacked-s1e6-ai-on-trial-understanding-ai-for-lawyers/ Stay Ahead of Ransomware – Initial Access via Evolving Social Engineering https://www.sans.org/webcasts/stay-ahead-of-ransomware/ SEC:PRESENTATIONS/PODCASTS The Artifact and the Assumption: Decoding Digital Forensics Bias https://www.hexordia.com/blog/decoding-digital-forensics-bias Cellebrite Tip Tuesday: PASX and PASR Files https://www.youtube.com/watch?v=cellebrite Beers with Talos breaks down the 2025 Talos Year in Review https://blog.talosintelligence.com/beers-with-talos-breaks-down-the-2025-talos-year-in-review/ EP268 Weaponizing the Administrative Fabric: Cloud Identity and SaaS Compromise in M-Trends 2026 https://cloud.withgoogle.com/cloudsecurity/podcast/ep268-weaponizing-the-administrative-fabric-cloud-identity-and-saas-compromise-in-m-trends-2026/ CQURE Hacks #76: Evading EDR Using Signed Driver https://cqureacademy.com/blog/cqure-hacks-76-evading-edr-using-signed-driver/ FBI Ahead of the Threat Podcast: Season 2, Episode 3 https://www.fbi.gov/news/podcasts Ahead of the Threat Podcast: Season 2, Episode 4 – Sherrod DeGrippo https://www.fbi.gov/news/podcasts/4 Data vs Information vs Intelligence: A CTI Analyst's Guide https://kravensecurity.com/data-information-intelligence/ Mobile Unpacked S4:E3 // Deducing the duplications https://www.magnetforensics.com/resources/s4e3-deducing-the-duplications-understanding-duplicated-data-in-file-systems/ Winter SHIELD: Closing the Security Control Gap https://thecyberwire.com/podcasts/microsoft-threat-intelligence/65/notes Is the CyberDefenders CCDL1 Worth It? https://www.youtube.com/watch?v=mydfir Regional Threats, Global Impact: A TA2725 Case Study https://www.buzzsprout.com/2445401/episodes/18912558-regional-threats-global-impact-a-ta2725-case-study.mp3 Linux Password Hash Risks and Security Overview https://sandflysecurity.com/blog/linux-password-hash-risks-and-security-overview When the Security Scanner Became the Weapon: Inside the TeamPCP Attack https://www.youtube.com/watch?v=sans Operation Ghost Mail, Starlink Evasion, and the Stoat Waffle Threat https://www.team-cymru.com/post/operation-ghost-mail Using GTI to Hunt Adversaries on the Dark Web https://www.buzzsprout.com/1762840/episodes/18894011-using-gti-to-hunt-adversaries-on-the-dark-web.mp3 Google's Cyber Disruption Unit; Coruna is Triangulation http://securityconversations.fireside.fm/1 SEC:MALWARE Kamasers Analysis: A Multi-Vector DDoS Botnet https://any.run/cybersecurity-blog/kamasers-technical-analysis/ Active Magecart Campaign Targets Spain https://any.run/cybersecurity-blog/banks-magecart-campaign/ Green Blood v2.0 ransomware analysis with decryption https://asec.ahnlab.com/en/92997/ Illuminating VoidLink: Technical analysis of the VoidLink rootkit framework https://www.elastic.co/security-labs/illuminating-voidlink Elastic Security Labs uncovers BRUSHWORM and BRUSHLOGGER https://www.elastic.co/security-labs/brushworm-targets-financial-services When Malware Talks Back: Real-Time Interaction with a Threat Actor During Kiss Loader Analysis https://blog.gdatasoftware.com/2026/03/38399-analysis-kissloader Infiniti Stealer: a new macOS infostealer using ClickFix and Python/Nuitka https://www.malwarebytes.com/blog/threat-intel/2026/03/infiniti-stealer-a-new-macos-infostealer-using-clickfix-and-python-nuitka GlassWorm attack installs fake browser extension for surveillance https://www.malwarebytes.com/blog/news/2026/03/glassworm-attack-installs-fake-browser-extension-for-surveillance Coruna: the framework used in Operation Triangulation https://securelist.com/coruna-framework-updated-operation-triangulation-exploit/119228/ An AI gateway designed to steal your data https://securelist.com/litellm-supply-chain-attack/119257/ SEC:MISCELLANEOUS Tips to Optimize DFIR Analysis Time in Belkasoft X https://belkasoft.com/dfir-analysis-time-optimization How Real-Time Evidence Sharing Helped the Orange County Sheriff's Office Solve a Homicide https://cellebrite.com/en/resources/customer-stories/how-real-time-evidence-sharing-helped-the-orange-county-sheriffs-office-solve-a-florida-homicide/ From Digital Investigations to Business Resilience: Key Private Sector Trends for 2026 https://cellebrite.com/en/blog/digital-investigations-private-sector-trends-2026/ DFIR Jobs Update – 03/23/26 https://dfirdominican.com/dfir-jobs-update-03-23-26/ Security Automation with Elastic Workflows: From Alert to Response https://www.elastic.co/security-labs/security-automation-with-elastic-workflows Distributed Password Recovery Goes 64-bit: Ready for RTX 5090 https://blog.elcomsoft.com/2026/03/distributed-password-recovery-goes-64-bit-ready-for-rtx-5090/ Beyond Keywords: AI Classification For Forensic Email Review https://www.forensicfocus.com/articles/beyond-keywords-ai-classification-for-forensic-email-review/ Digital Forensics Round-Up, March 25 2026 https://www.forensicfocus.com/news/digital-forensics-round-up-march-25-2026/ Tool proliferation in DFIR: Why our toolkits keep growing https://www.magnetforensics.com/blog/tool-proliferation-in-dfir-why-our-toolkits-keep-growing-and-what-that-really-means/ Building a Firewall via Endpoint Security https://objective-see.org/blog/blog_0x86.html Mandiant Global Median Dwell Time Deteriorates from 11 to 14 Days https://taosecurity.blogspot.com/2026/03/mandiant-global-median-dwell-time.html Why 47? The Math Behind "AI Attacks 47x Faster Than Humans" https://robtlee73.substack.com/p/why-47-the-math-behind-ai-attacks SEC:SOFTWARE UPDATES 25G Fiber extension + TaskForce 2026.2 update https://blog.atola.com/25g-fiber-tf-2026-2/ Amped Replay Update 40205 https://blog.ampedsoftware.com/2026/03/25/amped-replay-update-40205 Browser History Examiner Version 1.23.2 https://www.foxtonforensics.com/browser-history-examiner/version-history Elcomsoft Distributed Password Recovery goes 64-bit https://www.elcomsoft.com/news/876.html Crow-Eye v0.8.0 https://github.com/Ghassan-elsman/Crow-Eye/releases/tag/v0.8.0 Timesketch 20260326 https://github.com/google/timesketch/releases/tag/20260326 Announcing ida-mcp 2.0: A Headless MCP Server for IDA Pro https://jtsylve.blog/post/2026/03/25/Announcing-ida-mcp-2 MSAB Q1 2026 Major Release https://www.msab.com/updates/q1-2026-major-release-is-now-available/ OpenCTI 7.260326.0 https://github.com/OpenCTI-Platform/opencti/releases/tag/7.260326.0 Sandfly 5.7 – Performance Upgrade https://sandflysecurity.com/blog/sandfly-57-performance-upgrade IPED 4.3.1 https://github.com/sepinf-inc/IPED/releases/tag/4.3.1 RECON ITR Version 26.0.0 https://sumuri.com/recon-itr-release-notes/ uac-3.3.0-rc1 https://github.com/tclahr/uac/releases/tag/v3.3.0-rc1 X-Ways Forensics 21.8 Preview 5 https://www.x-ways.net/winhex/forum/messages/1/5537.html"""
+# ═══════════════════════════════════════════════════════════════════════════
+# THIS WEEK IN 4N6 — STRUCTURED DATA PER WEEK
+# Format: { "heading": str, "items": [["Title", "https://url"], ...] }
+# ═══════════════════════════════════════════════════════════════════════════
 
-W12_RAW = """WEEK:Week 12 – 2026|2026-03-22 SEC:FORENSIC ANALYSIS AI-Powered Picture Analysis with BelkaGPT https://belkasoft.com/ai-powered-picture-analysis Looks Can Lie: Is That Really an NVMe Drive? https://blog.elcomsoft.com/2026/03/looks-can-lie-is-that-really-an-nvme-drive/ 2026 MSAB CTF: Android Questions https://www.hexordia.com/blog/2026-msab-ctf-android-questions 2026 MSAB CTF: iOS Questions https://www.hexordia.com/blog/2026-msab-ctf-ios-questions BDC – More Battery Temps & Charging Stats for iOS https://www.stark4n6.com/2026/03/bdc-more-battery-temps-charging-stats.html Tracking LockBit Through Memory Forensics https://systemweakness.com/tracking-lockbit-through-memory-forensics-a0ba37aba21c SEC:THREAT INTELLIGENCE/HUNTING CVE-2025-32975: Arctic Wolf Observes Exploitation of Quest KACE https://arcticwolf.com/resources/blog-uk/cve-2025-32975-arctic-wolf-observes-exploitation-of-quest-kace-systems-management-appliance/ Nation-State Attacks Hit Machine Speed: 2026 Armis Cyberwarfare Report https://www.armis.com/blog/nation-state-attacks-hit-machine-speed-key-takeaways-of-the-2026-armis-cyberwarfare-report-and-what-it-means-for-security-teams/ Amazon threat intelligence teams identify Interlock ransomware campaign targeting enterprise firewalls https://aws.amazon.com/blogs/security/amazon-threat-intelligence-teams-identify-interlock-ransomware-campaign-targeting-enterprise-firewalls/ Sandworm: Russia's global infrastructure wrecking crew https://blog.barracuda.com/2026/03/16/sandworm--russia-s-global-infrastructure-wrecking-crew LotAI: How Attackers Weaponize AI Assistants for Data Exfiltration https://www.blackfog.com/lotai-weaponizing-ai-tools-for-data-exfiltration/ Feds Disrupt IoT Botnets Behind Huge DDoS Attacks https://krebsonsecurity.com/2026/03/feds-disrupt-iot-botnets-behind-huge-ddos-attacks/ NetSupport Manager: Tracking Dual-Use Remote Administration Infrastructure https://censys.com/blog/netsupport-manager-tracking-dual-use-remote-administration-infrastructure/ ResidentBat: Belarusian KGB Android Spyware at Internet Scale https://censys.com/blog/residentbat-belarusian-kgb-android-spyware/ Vshell: A Chinese-Language Alternative to Cobalt Strike https://censys.com/blog/vshell/ Odyssey Stealer: Inside a macOS Crypto-Stealing Operation https://censys.com/blog/odyssey-stealer-inside-a-macos-crypto-stealing-operation/ 16th March – Threat Intelligence Report https://research.checkpoint.com/2026/16th-march-threat-intelligence-report/ Transparent COM instrumentation for malware analysis https://blog.talosintelligence.com/transparent-com-instrumentation-for-malware-analysis/ Everyday tools, extraordinary crimes: the ransomware exfiltration playbook https://blog.talosintelligence.com/everyday-tools-extraordinary-crimes-the-ransomware-exfiltration-playbook/ MacSync Stealer: SEO Poisoning and ClickFix-Based macOS Malware Delivery Chain https://www.cloudsek.com/blog/macsync-stealer-seo-poisoning-and-clickfix-based-macos-malware-delivery-chain LiveChat Abuse: How Phishers Are Exploiting SaaS Support Tools https://cofense.com/blog/livechat-abuse-how-phishers-are-exploiting-saas-support-tools-to-steal-sensitive-data From Scanner to Stealer: Inside the trivy-action Supply Chain Compromise https://www.crowdstrike.com/en-us/blog/from-scanner-to-stealer-inside-the-trivy-action-supply-chain-compromise/ Tycoon2FA Phishing-as-a-Service Platform Persists Following Takedown https://www.crowdstrike.com/en-us/blog/tycoon2fa-phishing-as-a-service-platform-persists-following-takedown/ FancyBear Exposed: Major OPSEC Blunder Inside Russian Espionage Ops https://ctrlaltintel.com/threat%20research/FancyBear/ AI-Assisted Phishing Campaign Exploits Browser Permissions https://cyble.com/blog/ai-assisted-phishing-campaign/ Middle East Cyber Warfare Intensifies https://cyble.com/blog/middle-east-cyber-warfare-2026-hybrid-conflict/ Inside Russia's Shift to Credential-Based Intrusions https://cyble.com/blog/russia-credential-based-intrusions-cisos/ North Korea's Crypto Theft Operations: The Role of Lazarus Group https://cyble.com/blog/lazarus-group-bitrefill-cyberattack/ Darktrace Identifies Encryption in a World Leaks Ransomware Attack https://www.darktrace.com/blog/when-reality-diverges-from-the-playbook-darktrace-identifies-encryption-in-a-world-leaks-ransomware-attack Threat Hunting: Catching Emojis on Files and Email Subjects https://detect.fyi/threat-hunting-scenario-catching-emojis-on-files-and-email-subjects-kql-queries-5a92c92cdf84 Detection via Deception — Using your SIEM as a Free Deception Platform https://detect.fyi/detection-via-deception-using-your-siem-as-a-free-deception-platform-8ecdd97023d9 New Malware Highlights Increased Systematic Targeting of Network Infrastructure https://eclypsium.com/blog/condibot-monaco-malware-network-infrastructure/ Linux & Cloud Detection Engineering – Getting Started with Defend for Containers https://www.elastic.co/security-labs/getting-started-with-defend-for-containers Linux & Cloud Detection Engineering – TeamPCP Container Attack Scenario https://www.elastic.co/security-labs/teampcp-container-attack-scenario WIPED IN 79 COUNTRIES: The Handala Hack Attack on Stryker Corporation https://falconfeeds.io/blogs/handala-hack-attack-on-stryker-corporation Iran's FindFace Acquisition: The Architecture of a Digital Surveillance State https://falconfeeds.io/blogs/irans-findface-acquisition-digital-surveillance-state Cyber Islamic Resistance-Axis and the Iran-Israel Shadow War https://falconfeeds.io/blogs/cyber-islamic-resistance-axis-iran-israel-shadow-war Following the Money: The 82-Wallet Bitcoin Cluster Linked to Iran's IRGC-CEC https://falconfeeds.io/blogs/tracing-shahid-hemmat-82-wallet-bitcoin-cluster-irgc-cec Bench.sh: How Threat Actors Repurpose a Legitimate Benchmarking Tool https://flare.io/learn/resources/blog/bench-sh-post-exploitation-recon The Seizure of Handala https://flare.io/learn/resources/blog/handala-seizure VoidStealer: Debugging Chrome to Steal Its Secrets https://www.gendigital.com/blog/insights/research/voidstealer-abe-bypass Ransomware Under Pressure: TTPs in a Shifting Threat Landscape https://cloud.google.com/blog/topics/threat-intelligence/ransomware-ttps-shifting-threat-landscape/ The Proliferation of DarkSword: iOS Exploit Chain https://cloud.google.com/blog/topics/threat-intelligence/darksword-ios-exploit-chain/ Hasta la vista, Hastalamuerte: An Overview of The Gentlemen's TTPs https://www.group-ib.com/blog/hastalamuerte-gentlemen-raas-ttps/ Iranian Botnet Exposed via Open Directory: 15-Node Relay Network https://hunt.io/blog/iran-botnet-operation-open-directory Inside Keitaro Abuse: A Persistent Stream of AI-Driven Investment Scams https://www.infoblox.com/blog/threat-intelligence/inside-keitaro-abuse-a-persistent-stream-of-ai-driven-investment-scams/ DLL Search Order Hijacking: Finding and Exploiting the Flaw https://infosecwriteups.com/dll-search-order-hijacking-finding-and-exploiting-the-flaw-9f5dabaa2470 CTI Research: MuddyWater/Seedworm (Mango Sandstorm) https://infosecwriteups.com/cti-research-muddywater-seedworm-mango-sandstorm-ebf6af5ba061 GhostClaw expands beyond npm: GitHub repositories and AI workflows deliver macOS infostealer https://www.jamf.com/blog/ghostclaw-ghostloader-malware-github-repositories-ai-workflows/ Help on the line: How a Microsoft Teams support call led to compromise https://www.microsoft.com/en-us/security/blog/2026/03/16/help-on-the-line-how-a-microsoft-teams-support-call-led-to-compromise/ When tax season becomes cyberattack season https://www.microsoft.com/en-us/security/blog/2026/03/19/when-tax-season-becomes-cyberattack-season-phishing-and-malware-campaigns-using-tax-related-lures/ CTI-REALM: A new benchmark for detection rule generation with AI agents https://www.microsoft.com/en-us/security/blog/2026/03/20/cti-realm-a-new-benchmark-for-end-to-end-detection-rule-generation-with-ai-agents/ DPRK IT Worker Fraud: Hiring an Insider Threat https://nisos.com/blog/dprk-it-worker-fraud-insider-threat/ Four Arms, One Monster: GlassWorm Invades GitHub, NPM, VS Code and PyPI https://opensourcemalware.com/blog/four-arms-one-monster Iranian Cyber Threat Evolution: From MBR Wipers to Identity Weaponization https://unit42.paloaltonetworks.com/evolution-of-iran-cyber-threats/ Analyzing the Current State of AI Use in Malware https://unit42.paloaltonetworks.com/ai-use-in-malware/ CursorJack: weaponizing Deeplinks to exploit Cursor IDE https://www.proofpoint.com/us/blog/threat-insight/cursorjack-weaponizing-deeplinks-exploit-cursor-ide The Attack Cycle is Accelerating: Rapid7 2026 Global Threat Landscape Report https://www.rapid7.com/blog/post/tr-accelerating-attack-cycle-2026-global-threat-landscape-report/ 2025 Identity Threat Landscape Report: Credential Threats in 2025 https://www.recordedfuture.com/blog/identity-trend-report-march-blog AI and browser threats stand out in the 2026 Threat Detection Report https://redcanary.com/blog/threat-detection/2026-threat-detection-report/ Casting a Wider Net: ClickFix, Deno, and LeakNet's Scaling Threat https://reliaquest.com/blog/threat-spotlight-casting-a-wider-net-clickfix-deno-and-leaknets-scaling-threat UEBA in the Real World: Catching Intrusions That Don't Look Like Intrusions https://blog.sekoia.io/ueba-in-the-real-world-catching-intrusions-that-dont-look-like-intrusions/ Building an Adversarial Consensus Engine: Multi-Agent LLMs for Automated Malware Analysis https://www.sentinelone.com/labs/building-an-adversarial-consensus-engine-multi-agent-llms-for-automated-malware-analysis/ GlassWorm Sleeper Extensions Activate on Open VSX https://socket.dev/blog/glassworm-sleeper-extensions-activated-on-open-vsx Trivy Under Attack Again: Widespread GitHub Actions Tag Compromise https://socket.dev/blog/trivy-under-attack-again-github-actions-compromise CanisterWorm: npm Publisher Compromise Deploys Backdoor Across 29+ Packages https://socket.dev/blog/canisterworm-npm-publisher-compromise-deploys-backdoor-across-29-packages Ransomware 3.0: The Autonomous Threat That Changed Everything https://socradar.io/blog/ransomware-3-0-the-autonomous-threat/ Android devices ship with firmware-level malware https://www.sophos.com/en-us/blog/android-devices-ship-with-firmware-level-malware How to Prove Incident Containment: Evidence of Absence for IR https://stairwell.com/blog/how-to-prove-incident-containment-evidence-of-absence-for-incident-response-and-the-board/ Stop Renting Your Own Malware Data Back https://stairwell.com/blog/stop-renting-your-own-malware-data-back-the-economics-of-private-threat-intelligence/ You Cannot Detect What You Did Not Keep https://stairwell.com/blog/you-cannot-detect-what-you-did-not-keep-why-file-retention-is-the-missing-security-control/ Malicious Polymarket Bot Hides in Hijacked dev-protocol GitHub Org https://www.stepsecurity.io/blog/malicious-polymarket-bot-hides-in-hijacked-dev-protocol-github-org-and-steals-wallet-keys Trivy Compromised a Second Time – Malicious v0.69.4 Release https://www.stepsecurity.io/blog/trivy-compromised-a-second-time---malicious-v0-69-4-release One Commit Away from Theft: When Supply Chain Attacks Hit the Crypto Ecosystem https://www.sygnia.co/blog/one-commit-away-from-theft-when-supply-chain-attacks-hit-the-crypto-ecosystem/ Detecting CVE-2026-3288 & CVE-2026-24512: Ingress-nginx configuration injection for Kubernetes https://www.sysdig.com/blog/detecting-cve-2026-3288-cve-2026-24512-ingress-nginx-configuration-injection-vulnerabilities-for-kubernetes The Beast Returns: Analysis of a Beast Ransomware Server https://www.team-cymru.com/post/beast-ransomware-server-toolkit-analysis Web Shells, Tunnels, and Ransomware: Dissecting a Warlock Attack https://www.trendmicro.com/en_us/research/26/c/dissecting-a-warlock-attack.html Full Disclosure: A Third (and Fourth) Azure Sign-In Log Bypass Found https://trustedsec.com/blog/full-disclosure-a-third-and-fourth-azure-sign-in-log-bypass-found How Attackers Establish Persistence in Hybrid Environments https://www.vectra.ai/blog/how-attackers-establish-persistence-in-hybrid-environments EDR killers explained: Beyond the drivers https://www.welivesecurity.com/en/eset-research/edr-killers-explained-beyond-the-drivers/ Trivy Compromised: Everything You Need to Know about the Latest Supply Chain Attack https://www.wiz.io/blog/trivy-compromised-teampcp-supply-chain-attack SEC:UPCOMING EVENTS BHIS – Talkin' Bout [infosec] News 2026-03-23 https://www.youtube.com/watch?v=bhis Advanced Digital Investigations in Africa: Unlocking the Evidence Hidden in Every Device https://cellebrite.com/en/resources/webinars/advanced-digital-investigations-in-africa-unlocking-the-evidence-hidden-in-every-device/ Investigating Evasion: How to Find What the Alert Missed https://register.gotowebinar.com/register/9096089726229071963 Mobile Unpacked S4:E3 // Deducing the duplications https://www.magnetforensics.com/resources/s4e3-deducing-the-duplications-understanding-duplicated-data-in-file-systems/ SEC:PRESENTATIONS/PODCASTS Digital Forensics Now Podcast S3 – 3 https://www.youtube.com/watch?v=dfnow Magnet Virtual Summit – CTF Feb 2026 Android walk through https://www.youtube.com/watch?v=magnet EP267 AI SOC or AI in a SOC? https://cloud.withgoogle.com/cloudsecurity/podcast/ep267-ai-soc-or-ai-in-a-soc-cutting-through-hype-pricing-models-and-siem-detection-efficacy-with-raffy-marty/ Signals in the noise: Five years of enterprise DFIR trends https://www.magnetforensics.com/resources/the-state-of-enterprise-dfir-2026-how-ai-collaboration-and-integration-are-redefining-digital-investigations/ Root Cause Analysis – Part 1: Introduction https://www.youtube.com/watch?v=rca1 Root Cause Analysis – Part 2: Methodology https://www.youtube.com/watch?v=rca2 Is MotW Bypass Possible in 2026? https://www.youtube.com/watch?v=motw The greatest APT hunter of all time, Apple's exploit kit problem https://securityconversations.fireside.fm/sergey-mineev-apple-darksword-exploit-kit-fedramp-microsoft Duaine Labno on Digital Investigations and Corporate Threat Intelligence https://www.team-cymru.com/post/digital-investigations-and-corporate-threat-intelligence S1 E43: Karen Read 1-3: Jessica Hyde Testimony Part 2 https://www.youtube.com/watch?v=kread3 LABScon25 Replay: Your Apps May Be Gone, But the Hackers Made $9 Billion https://www.sentinelone.com/labs/labscon25-replay-your-apps-may-be-gone-but-the-hackers-made-9-billion-and-theyre-still-here/ SEC:MALWARE Glassworm Strikes Popular React Native Phone Number Packages https://www.aikido.dev/blog/glassworm-strikes-react-packages-phone-numbers GlassWorm Hides a RAT Inside a Malicious Chrome Extension https://www.aikido.dev/blog/glassworm-chrome-extension-rat TeamPCP deploys CanisterWorm on NPM following Trivy compromise https://www.aikido.dev/blog/teampcp-deploys-worm-npm-trivy-compromise Forbidden Hyena adopts BlackReaperRAT in AI-powered campaigns https://bi-zone.medium.com/forbidden-hyena-adopts-blackreaperrat-in-ai-powered-campaigns-26aa61dff896 Windsurf IDE Extension Drops Malware via Solana Blockchain https://www.bitdefender.com/en-us/blog/labs/windsurf-extension-malware-solana CQURE Hacks #75: NTFS Forensics – Recovering Deleted Files and Analyzing MFT Records https://cqureacademy.com/blog/cqure-hacks-75-ntfs-forensics-recovering-deleted-files-and-analyzing-mft-records/ Sweet Minecraft Mods – The Dark Tale of SugarSMP Scam https://blog.gdatasoftware.com/2026/03/38390-minecraft-mod-sugarsmp-malware GlassWorm Hits MCP: 5th Wave with New Delivery Techniques https://www.koi.ai/blog/glassworm-hits-mcp-5th-wave-with-new-delivery-techniques AI Wrote This Malware: Dissecting a Vibe-Coded Malware Campaign https://www.mcafee.com/blogs/other-blogs/mcafee-labs/ai-written-malware-vibe-coded-campaign/ RegPhantom Backdoor Threat Analysis https://www.nextron-systems.com/2026/03/20/regphantom-backdoor-threat-analysis/ Free real estate: GoPix, the banking Trojan living off your memory https://securelist.com/gopix-banking-trojan/119173/ Operation GhostMail: Russian APT exploits Zimbra Webmail to Target Ukraine https://www.seqrite.com/blog/operation-ghostmail-zimbra-xss-russian-apt-ukraine/ Building a Pipeline for Agentic Malware Analysis https://synthesis.to/2026/03/18/agentic_malware_analysis.html Technical Analysis of SnappyClient https://www.zscaler.com/blogs/security-research/technical-analysis-snappyclient SEC:MISCELLANEOUS Introducing DFIR Toolkit: Privacy-First DFIR utilities in your browser https://andreafortuna.org/2026/03/17/dfir-toolkit.html If you suck at your DFIR job, AI is going to take it https://brettshavers.com/brett-s-blog/entry/if-you-suck-at-your-dfir-job-ai-is-going-to-take-it A Practical Map of the DFIR Internet https://www.dfir.training/blog/a-practical-map-of-the-dfir-internet-marketplaces-faqs-and-fire-exits Cellebrite Changes the Investigative Game with the Launch of Genesis https://cellebrite.com/en/resources/press-releases/cellebrite-launches-genesis-agentic-ai-for-digital-investigations-cellebrite/ My book, "A Dance of Red and Blue" is out! https://koifsec.medium.com/my-book-a-dance-of-red-and-blue-is-out-02c594d02e57 DFIR Jobs Update – 03/16/26 https://dfirdominican.com/dfir-jobs-update-03-16-26/ A Study in DFIR: Open-Source, Enterprise, and the Art of Analysis https://bakerstreetforensics.com/2026/03/18/a-study-in-dfir-open-source-enterprise-and-the-art-of-analysis/ Forensic Focus Digest, March 20 2026 https://www.forensicfocus.com/news/forensic-focus-digest-march-20-2026/ Magnet One Case Stream: A new transformative workflow https://www.magnetforensics.com/blog/magnet-one-case-stream-a-new-transformative-workflow-amplifying-critical-work/ Who Uses MISP https://www.misp-project.org/who-uses-misp/ Sentinel-As-Code: The 2026 Update https://sentinel.blog/sentinel-as-code-the-2026-update/ SEC:SOFTWARE UPDATES Malwoverview 8.0.0 https://github.com/alexandreborges/malwoverview/releases/tag/v8.0.0 Arkime v6.1.0 https://github.com/arkime/arkime/releases/tag/v6.1.0 Update: oledump.py Version 0.0.85 https://blog.didierstevens.com/2026/03/17/update-oledump-py-version-0-0-85/ winfor-salt v2026.5.4 https://github.com/digitalsleuth/winfor-salt/releases/tag/v2026.5.4 VolWeb v3.16.0 https://github.com/k1nd0ne/VolWeb/releases/tag/v3.16.0 Arc2Lite v2.0.0 https://github.com/stark4n6/Arc2Lite/releases/tag/v2.0.0 MacOS-Analyzer-Suite v1.2.0 https://github.com/LETHAL-FORENSICS/MacOS-Analyzer-Suite/releases/tag/v1.2.0 AD_Miner v1.9.0 https://github.com/AD-Security/AD_Miner/releases/tag/v1.9.0 MISP v2.5.35 Released https://www.misp-project.org/2026/03/19/misp.2.5.35.released.html/ OpenCTI 7.260318.0 https://github.com/OpenCTI-Platform/opencti/releases/tag/7.260318.0 ExifTool 13.53 https://exiftool.org/history.html#v13.53 radare2 6.1.2 https://github.com/radareorg/radare2/releases/tag/6.1.2 X-Ways Forensics 21.8 Preview 4 https://www.x-ways.net/winhex/forum/messages/1/5537.html"""
+W12 = {
+    "week": "Week 12 – 2026",
+    "url": "https://thisweekin4n6.com/2026/03/22/week-12-2026/",
+    "date": "2026-03-22",
+    "sections": [
+        {
+            "heading": "FORENSIC ANALYSIS",
+            "items": [
+                ["AI-Powered Picture Analysis with BelkaGPT", "https://belkasoft.com/ai-powered-picture-analysis"],
+                ["Looks Can Lie: Is That Really an NVMe Drive? (Elcomsoft)", "https://blog.elcomsoft.com/2026/03/looks-can-lie-is-that-really-an-nvme-drive/"],
+                ["2026 MSAB CTF: Android Questions (Hexordia)", "https://www.hexordia.com/blog/2026-msab-ctf-android-questions"],
+                ["2026 MSAB CTF: iOS Questions (Hexordia)", "https://www.hexordia.com/blog/2026-msab-ctf-ios-questions"],
+                ["BDC – More Battery Temps & Charging Stats for iOS (Stark 4N6)", "https://www.stark4n6.com/2026/03/bdc-more-battery-temps-charging-stats.html"],
+                ["Tracking LockBit Through Memory Forensics", "https://systemweakness.com/tracking-lockbit-through-memory-forensics-a0ba37aba21c"],
+            ],
+        },
+        {
+            "heading": "THREAT INTELLIGENCE / HUNTING",
+            "items": [
+                ["CVE-2025-32975: Arctic Wolf Observes Exploitation of Quest KACE SMA", "https://arcticwolf.com/resources/blog-uk/cve-2025-32975-arctic-wolf-observes-exploitation-of-quest-kace-systems-management-appliance/"],
+                ["Nation-State Attacks Hit Machine Speed: 2026 Armis Cyberwarfare Report", "https://www.armis.com/blog/nation-state-attacks-hit-machine-speed-key-takeaways-of-the-2026-armis-cyberwarfare-report-and-what-it-means-for-security-teams/"],
+                ["February 2026 APT Attack Trends Report — South Korea (ASEC)", "https://asec.ahnlab.com/en/92972/"],
+                ["Winos4.0 malware disguised as KakaoTalk installation file (ASEC)", "https://asec.ahnlab.com/en/92971/"],
+                ["Attack case against MS-SQL server installing ICE Cloud scanner Larva-26002 (ASEC)", "https://asec.ahnlab.com/en/92988/"],
+                ["From flat networks to locked up domains with tiering models (SensePost)", "https://sensepost.com/blog/2026/from-flat-networks-to-locked-up-domains-with-tiering-models/"],
+                ["CTA Campaign Assessment: The Iran Conflict – Global Cyber Operations Risk (Avertium)", "https://www.avertium.com/resources/threat-reports/cta-campaign-assessment-iran-conflict"],
+                ["Amazon threat intelligence teams identify Interlock ransomware campaign (AWS)", "https://aws.amazon.com/blogs/security/amazon-threat-intelligence-teams-identify-interlock-ransomware/"],
+                ["Sandworm: Russia's global infrastructure wrecking crew (Barracuda)", "https://blog.barracuda.com/2026/03/sandworm-russia-infrastructure-wrecking-crew"],
+                ["LotAI: How Attackers Weaponize AI Assistants for Data Exfiltration (BlackFog)", "https://www.blackfog.com/lotai-attackers-weaponize-ai-assistants/"],
+                ["2026-03-17: SmartApeSG ClickFix pushes Remcos RAT (Brad Duncan / SANS ISC)", "https://malware-traffic-analysis.net/2026/03/17/index.html"],
+                ["Feds Disrupt IoT Botnets Behind Huge DDoS Attacks (Krebs on Security)", "https://krebsonsecurity.com/2026/03/feds-disrupt-iot-botnets-behind-huge-ddos-attacks/"],
+                ["ResidentBat: Belarusian KGB Android Spyware at Internet Scale (Censys)", "https://censys.com/residentbat-belarusian-kgb-android-spyware/"],
+                ["Vshell: A Chinese-Language Alternative to Cobalt Strike (Censys)", "https://censys.com/vshell-chinese-language-alternative-cobalt-strike/"],
+                ["Odyssey Stealer: Inside a macOS Crypto-Stealing Operation (Censys)", "https://censys.com/odyssey-stealer-macos-crypto-stealing/"],
+                ["Transparent COM instrumentation for malware analysis (Cisco Talos)", "https://blog.talosintelligence.com/transparent-com-instrumentation-for-malware-analysis/"],
+                ["Everyday tools, extraordinary crimes: the ransomware exfiltration playbook (Cisco Talos)", "https://blog.talosintelligence.com/ransomware-exfiltration-playbook/"],
+                ["MacSync Stealer: SEO Poisoning and ClickFix-Based macOS Malware (CloudSEK)", "https://www.cloudsek.com/blog/macsync-stealer-seo-poisoning-clickfix-macos-malware"],
+                ["LiveChat Abuse: How Phishers Are Exploiting SaaS Support Tools (Cofense)", "https://cofense.com/blog/livechat-abuse-phishers-exploiting-saas-support-tools/"],
+                ["From Scanner to Stealer: Inside the trivy-action Supply Chain Compromise (CrowdStrike)", "https://www.crowdstrike.com/blog/trivy-action-supply-chain-compromise/"],
+                ["Tycoon2FA Phishing-as-a-Service Platform Persists Following Takedown (CrowdStrike)", "https://www.crowdstrike.com/blog/tycoon2fa-phishing-as-a-service-persists/"],
+                ["FancyBear Exposed: Major OPSEC Blunder Inside Russian Espionage Ops (Ctrl-Alt-Intel)", "https://ctrlaltintel.com/fancybear-opsec-blunder/"],
+                ["AI-Assisted Phishing Campaign Exploits Browser Permissions (Cyble)", "https://cyble.com/blog/ai-assisted-phishing-browser-permissions/"],
+                ["Middle East Cyber Warfare Intensifies: Rising Attacks, Hacktivist Surge (Cyble)", "https://cyble.com/blog/middle-east-cyber-warfare-intensifies/"],
+                ["North Korea's Crypto Theft Operations: Lazarus Group (Cyble)", "https://cyble.com/blog/north-korea-crypto-theft-lazarus-group/"],
+                ["Weekly Intelligence Report – 20 March 2026 (Cyfirma)", "https://www.cyfirma.com/research/weekly-intelligence-report-20-march-2026/"],
+                ["Darktrace Identifies Encryption in a World Leaks Ransomware Attack", "https://darktrace.com/blog/world-leaks-ransomware-attack/"],
+                ["Threat Hunting: Catching emojis on Files and Email Subjects + KQL (Detect FYI)", "https://detect.fyi/threat-hunting-catching-emojis-on-files-and-email-subjects"],
+                ["Detection via Deception — Using your SIEM as a Free Deception Platform (Detect FYI)", "https://detect.fyi/detection-via-deception-using-siem-as-deception-platform"],
+                ["Detection Logic Bugs: Abusable Gaps in Detection Coverage (Detect FYI)", "https://detect.fyi/detection-logic-bugs-abusable-gaps-in-detection-coverage"],
+                ["Weekly Threat Infrastructure Investigation Week 9-10 (Disconinja)", "https://disconinja.hatenablog.com/entry/2026/03/17/215616"],
+                ["Microsoft Graph API Attack Surface: OAuth Flows, Abused Endpoints (InfoSec Write-ups)", "https://infosecwriteups.com/microsoft-graph-api-attack-surface-oauth-flows-abused-endpoints-and-what-defenders-miss-9c303ea2aa02"],
+                ["New Malware Highlights Increased Systematic Targeting of Network Infrastructure (Eclypsium)", "https://eclypsium.com/blog/condibot-monaco-malware-network-infrastructure/"],
+                ["Linux & Cloud Detection Engineering – Getting Started with Defend for Containers (Elastic)", "https://www.elastic.co/security-labs/getting-started-with-defend-for-containers"],
+                ["Linux & Cloud Detection Engineering – TeamPCP Container Attack Scenario (Elastic)", "https://www.elastic.co/security-labs/teampcp-container-attack-scenario"],
+                ["WIPED IN 79 COUNTRIES: The Handala Hack Attack on Stryker Corporation (FalconFeeds)", "https://falconfeeds.io/blogs/handala-hack-attack-on-stryker-corporation"],
+                ["Iran's FindFace Acquisition: The Architecture of a Digital Surveillance State (FalconFeeds)", "https://falconfeeds.io/blogs/irans-findface-acquisition-digital-surveillance-state"],
+                ["Following the Money: The 82-Wallet Bitcoin Cluster Linked to Iran's IRGC-CEC (FalconFeeds)", "https://falconfeeds.io/blogs/82-wallet-bitcoin-cluster-irgc-cec"],
+                ["Bench.sh: How Threat Actors Repurpose a Legitimate Benchmarking Tool (Flare)", "https://www.flare.io/blog/bench-sh-threat-actors-repurpose-benchmarking-tool/"],
+                ["VoidStealer: Debugging Chrome to Steal Its Secrets (Gen)", "https://www.gendigital.com/blog/voidstealer-debugging-chrome/"],
+                ["GhostClaw expands beyond npm: GitHub repositories and AI workflows deliver macOS infostealer (Jamf)", "https://www.jamf.com/blog/ghostclaw-expands-beyond-npm/"],
+                ["Poisoned Typeface: How Simple Font Rendering Poisons Every AI Assistant (LayerX)", "https://layerxsecurity.com/blog/poisoned-typeface-font-rendering-ai-assistant/"],
+                ["DarkSword Threatens iOS Users (Lookout)", "https://www.lookout.com/threat-intelligence/article/darksword-threatens-ios-users"],
+                ["When a Microsoft Teams support call led to compromise (Microsoft Security)", "https://www.microsoft.com/en-us/security/blog/2026/03/18/when-a-microsoft-teams-support-call-led-to-compromise/"],
+                ["When tax season becomes cyberattack season: Phishing using tax-related lures (Microsoft)", "https://www.microsoft.com/en-us/security/blog/2026/03/17/when-tax-season-becomes-cyberattack-season/"],
+                ["CTI-REALM: A new benchmark for end-to-end detection rule generation with AI (Microsoft)", "https://www.microsoft.com/en-us/security/blog/2026/03/19/cti-realm-benchmark-detection-rule-generation/"],
+                ["Attacking Kerberos 2: Roasting Attacks (MII Cyber Security)", "https://mii-cybersecurity.com/attacking-kerberos-roasting-attacks/"],
+                ["Finding the 'Quiet' Compromise with Long Tail Analysis (MII)", "https://mii-cybersecurity.com/long-tail-analysis-quiet-compromise/"],
+                ["DPRK IT Worker Fraud: Hiring an Insider Threat (Nisos)", "https://www.nisos.com/research/dprk-it-worker-fraud/"],
+                ["GlassWorm Invades GitHub, NPM, VS Code and PyPI (OpenSourceMalware)", "https://opensourcemalware.com/glassworm-github-npm-vscode-pypi/"],
+                ["Iranian Cyber Threat Evolution: From MBR Wipers to Identity Weaponization (Palo Alto)", "https://unit42.paloaltonetworks.com/iranian-cyber-threat-evolution/"],
+                ["Boggy Serpens Threat Assessment (Palo Alto)", "https://unit42.paloaltonetworks.com/boggy-serpens-threat-assessment/"],
+                ["Analyzing the Current State of AI Use in Malware (Palo Alto)", "https://unit42.paloaltonetworks.com/ai-use-in-malware-analysis/"],
+                ["T1071.001 Web Protocols in MITRE ATT&CK Explained (Picus)", "https://www.picussecurity.com/resource/blog/t1071-001-web-protocols"],
+                ["T1059.013 Container CLI/API in MITRE ATT&CK Explained (Picus)", "https://www.picussecurity.com/resource/blog/t1059-013-container-cli-api"],
+                ["What Is Fileless Malware? (Picus)", "https://www.picussecurity.com/resource/blog/what-is-fileless-malware"],
+                ["T1219.001 IDE Tunneling in MITRE ATT&CK Explained (Picus)", "https://www.picussecurity.com/resource/blog/t1219-001-ide-tunneling"],
+                ["T1547.001 Registry Run Keys/Start Up Folder in MITRE ATT&CK Explained (Picus)", "https://www.picussecurity.com/resource/blog/t1547-001-registry-run-keys"],
+                ["CursorJack: Weaponizing Deeplinks to Exploit Cursor IDE (Proofpoint)", "https://www.proofpoint.com/us/blog/threat-insight/cursorjack-weaponizing-deeplinks-exploit-cursor-ide"],
+                ["The Stryker breach didn't match the playbook. That shouldn't be a surprise. (Push Security)", "https://pushsecurity.com/blog/stryker-handala-report"],
+                ["The Attack Cycle is Accelerating: Rapid7 2026 Global Threat Landscape Report", "https://www.rapid7.com/blog/post/tr-accelerating-attack-cycle-2026-global-threat-landscape-report/"],
+                ["Microsoft Orphaned Agents Identities: Hidden identity debt in Entra tenant", "https://thalpius.com/2026/03/17/microsoft-orphaned-agents-identities-the-hidden-identity-debt-in-your-entra-tenant/"],
+                ["2025 Identity Threat Landscape Report: Infostealer Economy (Recorded Future)", "https://www.recordedfuture.com/blog/identity-trend-report-march-blog"],
+                ["AI and browser threats stand out in the 2026 Threat Detection Report (Red Canary)", "https://redcanary.com/threat-detection-report/"],
+                ["Casting a Wider Net: ClickFix, Deno, and LeakNet's Scaling Threat (ReliaQuest)", "https://www.reliaquest.com/blog/clickfix-deno-leaknet-scaling-threat/"],
+                ["Observed Telegram Bot Naming Patterns in Recent MuddyWater Malware (Synaptic)", "https://synaptic-systems.co.uk/muddy-water-telegram-bot-naming-patterns/"],
+                ["IPv4 Mapped IPv6 Addresses (SANS ISC)", "https://isc.sans.edu/diary/ipv4-mapped-ipv6-addresses/"],
+                ["GSocket Backdoor Delivered Through Bash Script (SANS ISC)", "https://isc.sans.edu/diary/gsocket-backdoor-bash-script/"],
+                ["UEBA in the Real World: Catching Intrusions That Don't Look Like Intrusions (Sekoia)", "https://www.sekoia.io/en/blog/ueba-real-world-catching-intrusions/"],
+                ["Building an Adversarial Consensus Engine | Multi-Agent LLMs for Malware Analysis (SentinelOne)", "https://www.sentinelone.com/blog/adversarial-consensus-engine-multi-agent-llms-malware-analysis/"],
+                ["How Kinetic Strikes Opened the Door to Cyber and Influence War (Simone Kraus)", "https://simonekraus.com/kinetic-strikes-cyber-influence-war/"],
+                ["GlassWorm Sleeper Extensions Activate on Open VSX (Socket)", "https://socket.dev/blog/glassworm-sleeper-extensions-open-vsx"],
+                ["Trivy Under Attack: Widespread GitHub Actions Tag Compromise Exposes CI/CD Secrets (Socket)", "https://socket.dev/blog/trivy-github-actions-tag-compromise"],
+                ["CanisterWorm: npm Publisher Compromise Deploys Backdoor Across 29+ Packages (Socket)", "https://socket.dev/blog/canisterworm-npm-publisher-compromise"],
+                ["Ransomware 3.0: The Autonomous Threat That Changed Everything (SOCRadar)", "https://socradar.io/ransomware-3-0-autonomous-threat/"],
+                ["Android devices ship with firmware-level malware (Sophos)", "https://www.sophos.com/en-us/blog/android-firmware-level-malware"],
+                ["How to Prove Incident Containment: Evidence of Absence (Stairwell)", "https://stairwell.com/news/how-to-prove-incident-containment-evidence-of-absence/"],
+                ["Stop Renting Your Own Malware Data Back (Stairwell)", "https://stairwell.com/news/stop-renting-your-own-malware-data-back/"],
+                ["Continuous Malware Intelligence: Replacing Retro Hunts With Hindsight (Stairwell)", "https://stairwell.com/news/continuous-malware-intelligence/"],
+                ["Malicious Polymarket Bot Hides in Hijacked dev-protocol GitHub Org (Step Security)", "https://www.stepsecurity.io/blog/malicious-polymarket-bot-hides-in-hijacked-dev-protocol-github-org-and-steals-wallet-keys"],
+                ["Malicious npm in Popular React Native Packages – 130K+ Monthly Downloads (Step Security)", "https://www.stepsecurity.io/blog/malicious-npm-releases-found-in-popular-react-native-packages---130k-monthly-downloads-compromised"],
+                ["Trivy Compromised a Second Time – Malicious v0.69.4 Release (Step Security)", "https://www.stepsecurity.io/blog/trivy-compromised-a-second-time---malicious-v0-69-4-release"],
+                ["Advanced fake Zoom installer delivering malware (Sublime Security)", "https://proxied2.sublime.security/blog/advanced-fake-zoom-installer-used-for-delivering-malware"],
+                ["One Commit Away from Theft: Supply Chain Attacks Hit the Crypto Ecosystem (Sygnia)", "https://www.sygnia.co/blog/one-commit-away-from-theft-supply-chain-attacks-crypto/"],
+                ["New Malware Targets Users of Cobra DocGuard Software (Symantec)", "https://symantec-enterprise-blogs.security.com/blogs/threat-intelligence/cobra-docguard-malware"],
+                ["Detecting CVE-2026-3288 & CVE-2026-24512: Ingress-nginx vulnerabilities for Kubernetes (Sysdig)", "https://sysdig.com/blog/detecting-cve-2026-3288-cve-2026-24512-ingress-nginx/"],
+                ["CVE-2026-33017: How attackers compromised Langflow AI pipelines (Sysdig)", "https://sysdig.com/blog/cve-2026-33017-langflow-ai-pipelines/"],
+                ["ZeroTrace Multi-Family MaaS Operation — Open Directory Exposure (The Hunter's Ledger)", "https://thehuntersledger.com/zerotrace-maas-operation/"],
+                ["From Missiles to Malware — Part 2 Defending Against the Handala Campaign (Third Eye)", "https://thirdeye.io/from-missiles-to-malware-part-2/"],
+                ["Perseus: DTO malware that takes notes (ThreatFabric)", "https://www.threatfabric.com/blogs/perseus-dto-malware.html"],
+                ["Web Shells, Tunnels, and Ransomware: Dissecting a Warlock Attack (Trend Micro)", "https://www.trendmicro.com/en_us/research/26/c/warlock-attack-web-shells-tunnels-ransomware.html"],
+                ["From Misconfigured Spring Boot Actuator to SharePoint Exfiltration (Trend Micro)", "https://www.trendmicro.com/en_us/research/26/c/spring-boot-actuator-sharepoint-exfiltration.html"],
+                ["Full Disclosure: A Third and Fourth Azure Sign-In Log Bypass Found (TrustedSec)", "https://trustedsec.com/blog/azure-sign-in-log-bypass/"],
+                ["How Attackers Establish Persistence in Hybrid Environments (Vectra AI)", "https://www.vectra.ai/blog/how-attackers-establish-persistence-in-hybrid-environments"],
+                ["What the Stryker Incident Reveals About Handala's Attack Playbook (Vectra AI)", "https://www.vectra.ai/blog/what-the-stryker-incident-reveals-about-handalas-attack-playbook"],
+                ["EDR killers explained: Beyond the drivers (WeLiveSecurity / ESET)", "https://www.welivesecurity.com/en/eset-research/edr-killers-explained-beyond-the-drivers/"],
+                ["Trivy Compromised: Everything You Need to Know (Wiz)", "https://www.wiz.io/blog/trivy-compromised-teampcp-supply-chain-attack"],
+            ],
+        },
+        {
+            "heading": "UPCOMING EVENTS",
+            "items": [
+                ["BHIS – Talkin' Bout [infosec] News 2026-03-23", "https://www.youtube.com/watch?v=BHISnews20260323"],
+                ["Cellebrite – Advanced Digital Investigations in Africa", "https://cellebrite.com/en/resources/webinars/advanced-digital-investigations-in-africa-unlocking-the-evidence-hidden-in-every-device/"],
+                ["Cyber Triage – Investigating Evasion: How to Find What the Alert Missed", "https://register.gotowebinar.com/register/9096089726229071963"],
+                ["Magnet Forensics – Mobile Unpacked S4:E3 // Deducing the duplications", "https://www.magnetforensics.com/resources/s4e3-deducing-the-duplications-understanding-duplicated-data-in-file-systems/"],
+                ["SANS – 2026 Threat Landscape: Turning Threat Intelligence into Analytic Advantage", "https://www.linkedin.com/events/7438173815626641409/"],
+            ],
+        },
+        {
+            "heading": "PRESENTATIONS / PODCASTS",
+            "items": [
+                ["Digital Forensics Now Podcast S3 – Episode 3 (Alexis Brignoni)", "https://www.youtube.com/watch?v=dfn_s3ep3"],
+                ["Detect SSH -R Pivoting Before Ransomware Hits (Ayush Anand)", "https://www.youtube.com/watch?v=ssh_pivot"],
+                ["Cloud Security Podcast EP267 – AI SOC or AI in a SOC? (Google)", "https://cloud.withgoogle.com/cloudsecurity/podcast/ep267-ai-soc-or-ai-in-a-soc/"],
+                ["Cyber Threat Hunting at Scale: 4 Principles from the Trenches (Cyberwox)", "https://www.youtube.com/watch?v=cyberwox_hunting"],
+                ["02 – Exploring the Reverse Shell Source Code (Dr Josh Stroschein)", "https://www.youtube.com/watch?v=stroschein_reverseshell"],
+                ["Cybersecurity SOC Analyst Lab – Malicious Browser Extension FakeGPT (MyDFIR)", "https://www.youtube.com/watch?v=mydfir_fakegpt"],
+                ["Mac Imaging Made Easy with Fuji (Richard Davis / 13Cubed)", "https://www.youtube.com/watch?v=13cubed_fuji"],
+                ["LABScon25 Replay: Your Apps May Be Gone, But the Hackers Made $9B (SentinelOne)", "https://www.sentinelone.com/labs/labscon25-replay/"],
+                ["Team Cymru: Duaine Labno on Digital Investigations and Corporate Threat Intelligence", "https://team-cymru.com/podcast/duaine-labno-digital-investigations/"],
+                ["Intune Wipers, Veeam RCEs, and DPRK's $800M IT Empire (Team Cymru Video)", "https://team-cymru.com/blog/intune-wipers-veeam-rces-dprk/"],
+                ["Bloodhound OpenGraph (John Hammond)", "https://www.youtube.com/watch?v=hammond_bloodhound"],
+                ["Magnet Forensics – Signals in the noise: Five years of enterprise DFIR trends", "https://www.magnetforensics.com/resources/signals-in-the-noise-five-years-of-enterprise-dfir-trends/"],
+                ["Magnet Forensics – Bridging the air gap: Accelerating mobile forensics in secure labs", "https://www.magnetforensics.com/resources/bridging-the-air-gap-accelerating-mobile-forensics/"],
+                ["Root Cause Analysis Series Part 1-4 (Mossé Cyber Security Institute)", "https://mcsi.io/root-cause-analysis-series"],
+                ["Parsing The Truth: One Byte at a Time Podcast S1 E43: Karen Read – Jessica Hyde Testimony", "https://parsingthetruth.com/e43-karen-read-jessica-hyde/"],
+            ],
+        },
+        {
+            "heading": "MALWARE",
+            "items": [
+                ["Glassworm Strikes Popular React Native Phone Number Packages (Aikido)", "https://www.aikido.dev/blog/glassworm-react-native-phone-packages"],
+                ["Open VSX Extension Compromised by BlokTrooper GlassWorm (Aikido)", "https://www.aikido.dev/blog/open-vsx-extension-compromised-bloktrooper-glassworm"],
+                ["GlassWorm Hides a RAT Inside a Malicious Chrome Extension (Aikido)", "https://www.aikido.dev/blog/glassworm-rat-malicious-chrome-extension"],
+                ["TeamPCP deploys CanisterWorm on NPM following Trivy compromise (Aikido)", "https://www.aikido.dev/blog/teampcp-canisterworm-npm-trivy"],
+                ["Forbidden Hyena adopts BlackReaperRAT in AI-powered campaigns (BI.ZONE)", "https://bi.zone/blog/forbidden-hyena-blackreaperrat/"],
+                ["Windsurf IDE Extension Drops Malware via Solana Blockchain (Bitdefender)", "https://www.bitdefender.com/en-us/blog/labs/windsurf-ide-extension-solana-malware"],
+                ["CQURE Hacks #75: NTFS Forensics – Recovering Deleted Files and Analyzing MFT Records", "https://cqure.academy/cqure-hacks-75-ntfs-forensics/"],
+                ["Sweet Minecraft Mods – The Dark Tale of SugarSMP Scam, Malware & Extortion (G Data)", "https://www.gdatasoftware.com/blog/2026/03/sugarsmp-minecraft-malware"],
+                ["Reverse Engineering .NET AOT Malware: Multi-Stage Attack Chain with Binary Ninja", "https://howler.cell/blog/dotnet-aot-malware-binary-ninja"],
+                ["Fake Telegram Malware Campaign via Typosquatted Websites (K7 Labs)", "https://labs.k7computing.com/fake-telegram-malware-typosquatting/"],
+                ["GlassWorm Hits MCP: 5th Wave with New Delivery Techniques (Koi Security)", "https://koi.security/blog/glassworm-mcp-5th-wave"],
+                ["AI Wrote This Malware: Dissecting a Vibe-Coded Malware Campaign (McAfee Labs)", "https://www.mcafee.com/blogs/other-blogs/mcafee-labs/ai-written-malware-vibe-coded-campaign/"],
+                ["RegPhantom Backdoor Threat Analysis (Nextron Systems)", "https://www.nextron-systems.com/2026/03/20/regphantom-backdoor-threat-analysis/"],
+                ["OpenClaw Developers Targeted in Crypto-Wallet Phishing Attack (OX Security)", "https://www.ox.security/blog/openclaw-github-phishing-crypto-wallet-attack/"],
+                ["Beyond the Wiper — What Unit42's Iran Analysis Misses (Plausible Deniability)", "https://plausible-deniability.co/blog/BeyondWiper/"],
+                ["Free real estate: GoPix, the banking Trojan living off your memory (Securelist)", "https://securelist.com/gopix-banking-trojan/119173/"],
+                ["The SOC Files: Unpacking a new Horabot campaign in Mexico (Securelist)", "https://securelist.com/horabot-campaign/119033/"],
+                ["Operation GhostMail: Russian APT exploits Zimbra Webmail to Target Ukraine (Seqrite)", "https://www.seqrite.com/blog/operation-ghostmail-zimbra-xss-russian-apt/"],
+                ["Analysis of Batch File leads to DonutLoader (Shubho57)", "https://shubho57.medium.com/analysis-of-batch-file-leads-to-donutloader"],
+                ["MacOS malware persistence 5: cron jobs (Zhassulan Zhussupov)", "https://cocomelonc.github.io/malware/2026/03/macos-persistence-5-cron.html"],
+                ["MacOS malware persistence 6: PAM module injection (Zhassulan Zhussupov)", "https://cocomelonc.github.io/malware/2026/03/macos-persistence-6-pam.html"],
+                ["Technical Analysis of SnappyClient (ZScaler)", "https://www.zscaler.com/blogs/security-research/technical-analysis-snappyclient"],
+            ],
+        },
+        {
+            "heading": "MISCELLANEOUS",
+            "items": [
+                ["Introducing DFIR Toolkit: Privacy-First DFIR utilities that run entirely in your browser (Andrea Fortuna)", "https://andreafortuna.org/dfir-toolkit/"],
+                ["If you suck at your DFIR job, AI is going to take it (Brett Shavers)", "https://www.dfir.training/blog/if-you-suck-at-dfir-ai-will-take-it"],
+                ["A Practical Map of the DFIR Internet: Marketplaces, FAQs, and Fire Exits (DFIR Training)", "https://www.dfir.training/blog/practical-map-of-dfir-internet"],
+                ["56% are likely to leave DFIR within 12 months or unsure if they'll stay (DFIR Training)", "https://www.dfir.training/blog/dfir-retention-survey-2026"],
+                ["Cellebrite Genesis Launch: Groundbreaking Agentic AI Solution for Investigators", "https://cellebrite.com/en/resources/press-releases/cellebrite-genesis-launch/"],
+                ["Guardian Cloud Platform IRAP Assessment: What Australian Investigators Need to Know (Cellebrite)", "https://cellebrite.com/en/blog/guardian-cloud-platform-irap-assessment-australian-investigators/"],
+                ["Cellebrite Launches Guardian Investigate, the AI-Powered Nerve Center", "https://cellebrite.com/en/resources/press-releases/cellebrite-guardian-investigate/"],
+                ["From Weeks to Minutes: How Agentic AI Is Transforming Digital Investigations (Cellebrite)", "https://cellebrite.com/en/blog/agentic-ai-transforming-digital-investigations/"],
+                ["Why iOS Jailbreaking Is Over — And What That Means for Security Teams (Cellebrite)", "https://cellebrite.com/en/blog/why-ios-jailbreaking-is-over/"],
+                ["DFIR Jobs Update – 03/16/26 (DFIR Dominican / Josibel Mendoza)", "https://dfirminican.com/dfir-jobs-update-03-16-26/"],
+                ["A Study in DFIR: Open-Source, Enterprise, and the Art of Analysis (Baker Street Forensics)", "https://bakerstreetforensics.com/2026/03/18/a-study-in-dfir-open-source-enterprise-and-the-art-of-analysis/"],
+                ["Digital Forensics Jobs Round-Up, March 16 2026 (Forensic Focus)", "https://www.forensicfocus.com/articles/digital-forensics-jobs-round-up-march-16-2026/"],
+                ["Introducing Aid4Mail: Closing Email Evidence Gaps for Investigators (Forensic Focus)", "https://www.forensicfocus.com/articles/aid4mail-email-evidence-gaps/"],
+                ["Digital Forensics Round-Up, March 18 2026 (Forensic Focus)", "https://www.forensicfocus.com/articles/digital-forensics-round-up-march-18-2026/"],
+                ["Forensic Focus Digest, March 20 2026", "https://www.forensicfocus.com/articles/forensic-focus-digest-march-20-2026/"],
+                ["Explainer: Disk images (Howard Oakley / The Eclectic Light Company)", "https://eclecticlight.co/2026/03/explainer-disk-images/"],
+                ["숨겨진 데이터의 실체: Full File System 추출을 통해 드러난 정보들 (Magnet Forensics)", "https://www.magnetforensics.com/blog/full-file-system-extraction-hidden-data/"],
+                ["Magnet One Case Stream: A new transformative workflow (Magnet Forensics)", "https://www.magnetforensics.com/blog/magnet-one-case-stream/"],
+                ["Setting up UniqueSignal in MISP", "https://misp-project.org/2026/03/setting-up-uniquesignal/"],
+                ["Phones Everywhere: How to Catch Them (Matthew Plascencia)", "https://matthewplascencia.com/phones-everywhere-how-to-catch-them/"],
+                ["My book, 'A Dance of Red and Blue' is out! (Daniel Koifman)", "https://www.amazon.com/dance-red-blue-koifman/"],
+                ["Sentinel-As-Code: The 2026 Update (sentinel.blog / TobyG)", "https://sentinel.blog/2026/03/sentinel-as-code-2026-update/"],
+            ],
+        },
+        {
+            "heading": "SOFTWARE UPDATES",
+            "items": [
+                ["Malwoverview 8.0.0 (Alexandre Borges)", "https://github.com/alexandreborges/malwoverview/releases/tag/v8.0.0"],
+                ["Arkime v6.1.0", "https://github.com/arkime/arkime/releases/tag/v6.1.0"],
+                ["oledump.py Version 0.0.85 (Didier Stevens)", "https://blog.didierstevens.com/2026/03/oledump-0-0-85/"],
+                ["winfor-salt v2026.5.4 (Digital Sleuth)", "https://github.com/digitalsleuth/winfor-salt/releases/tag/v2026.5.4"],
+                ["VolWeb v3.16.0 (k1nd0ne)", "https://github.com/k1nd0ne/VolWeb/releases/tag/v3.16.0"],
+                ["Arc2Lite v2.0.0 – Combined Script (Kevin Pagano / Stark 4N6)", "https://github.com/stark4n6/arc2lite/releases/tag/v2.0.0"],
+                ["MacOS-Analyzer-Suite v1.2.0 (Lethal-Forensics)", "https://github.com/lethal-forensics/macos-analyzer-suite/releases/tag/v1.2.0"],
+                ["AD_Miner v1.9.0 (Mazars Tech)", "https://github.com/mazarstech/ad-miner/releases/tag/v1.9.0"],
+                ["MISP v2.5.35: Decomposed Event Views, Overmind UI, Security Hardening", "https://www.misp-project.org/2026/03/misp-2-5-35/"],
+                ["MISP-STIX 2026.3.13 Released", "https://www.misp-project.org/2026/03/misp-stix-2026-3-13/"],
+                ["OpenCTI 6.9.28", "https://github.com/OpenCTI-Platform/opencti/releases/tag/6.9.28"],
+                ["ExifTool 13.53 (Phil Harvey)", "https://exiftool.org/changes.html"],
+                ["radare2 6.1.2", "https://github.com/radareorg/radare2/releases/tag/6.1.2"],
+                ["X-Ways Forensics 21.6 SR-7 / 21.7 SR-2 / 21.8 Preview 4", "https://www.x-ways.net/forensics/updates.html"],
+                ["EntraFalcon – Security Findings Report (Compass Security)", "https://github.com/CompassSecurity/EntraFalcon"],
+            ],
+        },
+    ],
+}
 
-W11_RAW = """WEEK:Week 11 – 2026|2026-03-15 SEC:FORENSIC ANALYSIS Deep-Dive Forense in Box per iOS https://djangofaiola.blogspot.com/2026/03/deepdive-forense-in-box-per-ios.html The C:\\User Data in Windows Forensics https://blog.elcomsoft.com/2026/03/the-cuser-data-in-windows-forensics/ Android Pre-Installed Apps: What Could Possibly Go Wrong? https://blog.elcomsoft.com/2026/03/android-pre-installed-apps-what-could-possibly-go-wrong Apple Spotlight https://forensafe.com/blogs/apple-spotlight.html From Chaos to Chronology: The Power of Forensic Timelines https://www.thedfirspot.com/post/from-chaos-to-chronology-the-power-of-forensic-timelines SEC:THREAT INTELLIGENCE/HUNTING Glassworm Is Back: A New Wave of Invisible Unicode Attacks https://www.aikido.dev/blog/glassworm-returns-unicode-attack-github-npm-vscode Google Cloud Security Threat Horizons Report H1 2026 https://medium.com/anton-on-security/google-cloud-security-threat-horizons-report-13-h1-2026-is-out-926df5bb72a1 Defending Against Iranian Cyber Threats in the Wake of Operation Epic Fury https://www.attackiq.com/2026/03/05/operation-epic-fury/ Windows and macOS Malware Spreads via Fake "Claude Code" Google Ads https://www.bitdefender.com/en-us/blog/labs/fake-claude-code-google-ads-malware How AI Assistants are Moving the Security Goalposts https://krebsonsecurity.com/2026/03/how-ai-assistants-are-moving-the-security-goalposts/ Iran-Backed Hackers Claim Wiper Attack on Medtech Firm Stryker https://krebsonsecurity.com/2026/03/iran-backed-hackers-claim-wiper-attack-on-medtech-firm-stryker/ 9th March – Threat Intelligence Report https://research.checkpoint.com/2026/9th-march-threat-intelligence-report/ China-Nexus Activity Against Qatar Amid Expanding Regional Tensions https://blog.checkpoint.com/research/china-nexus-activity-against-qatar-observed-amid-expanding-regional-tensions/ Iranian MOIS Actors & the Cyber Crime Connection https://research.checkpoint.com/2026/iranian-mois-actors-the-cyber-crime-connection/ "Handala Hack" – Unveiling Group's Modus Operandi https://research.checkpoint.com/2026/handala-hack-unveiling-groups-modus-operandi/ Investigating multi-vector attacks in Log Explorer https://blog.cloudflare.com/investigating-multi-vector-attacks-in-log-explorer/ Weaponizing Telegram Bots: How Threat Actors Exfiltrate Credentials https://cofense.com/blog/weaponizing-telegram-bots-how-threat-actors-exfiltrate-credentials Sentinel MCP for Threat Hunting and Investigations https://cyberdom.blog/sentinel-mcp-for-threat-hunting-and-investigations/ Weekly Intelligence Report – 13 March 2026 https://www.cyfirma.com/news/weekly-intelligence-report-13-march-2026/ NetSupport RAT: How Legitimate Tools Can Be as Damaging as Malware https://www.darktrace.com/blog/netsupport-rat-how-legitimate-tools-can-be-as-damaging-as-malware Behind the console: Active phishing campaign targeting AWS console credentials https://securitylabs.datadoghq.com/articles/behind-the-console-aws-aitm-phishing-campaign/ The Red Queen's Race: Arms Race Dynamics in Threat Detection https://detect.fyi/the-red-queens-race-arms-race-dynamics-in-threat-detection-4f532a149fda Beyond the IP: Identifying Compromised Identities in RDP Sessions https://detect.fyi/beyond-the-ip-identifying-compromised-identities-in-rdp-sessions-98ce6931d73f Managing Elastic Security Detection Rules with Terraform https://www.elastic.co/security-labs/managing-rules-with-terraform CyberBan News Agency: Inside Iran's Dual-Use Cyber Propaganda Platform https://falconfeeds.io/blogs/cyberban-news-agency-iran-cyber-propaganda-influence-platform 313 Team and the Iran–Israel Shadow War https://falconfeeds.io/blogs/313-team-iran-israel-shadow-war Exposed Eyes: CCTV Vulnerabilities and Surveillance Threats in the Middle East https://falconfeeds.io/blogs/cctv-vulnerability-surveillance-threat-intelligence-middle-east-india-2025-2026 OilRig in the Iran–Israel Cyber War https://falconfeeds.io/blogs/oilrig-in-the-iran-israel-cyber-war-from-dns-tunnelling-to-persistent-state-sponsored-espionage Active Phishing Campaign on Hosting Infrastructure with Links to Iranian State Activity https://flare.io/learn/resources/blog/phishing-campaign-hosting-infrastructure-alleged-links-iranian-state-aligned-activity Webshells Threat Hunting: A Data-Driven Look Beyond Backdoors https://flare.io/learn/resources/blog/webshells-threat-hunting Navigating 2026's Converged Threats: Insights from Flashpoint's Global Threat Intelligence Report https://flashpoint.io/blog/global-threat-intelligence-report-2026/ Engineering the Future of Agentic Threat Hunting https://www.gendigital.com/blog/insights/research/engineering-the-future-of-agentic-threat-hunting Six Supply Chain Attack Groups to Watch Out for in 2026 https://www.group-ib.com/blog/supply-chain-attack-groups-2026/ How One Infostealer Infection Solved a Global Supply Chain Mystery and Unmasked DPRK Spies https://www.infostealers.com/article/how-one-infostealer-infection-solved-a-global-supply-chain-mystery-and-unmasked-dprk-spies-in-u-s-crypto/ Spearhead: One-to-many IOC hunting across multiple single-tenant environments https://www.huntandhackett.com/blog/spearhead-one-to-many-ioc-hunting-across-multiple-single-tenant-environments Operation Roundish: Uncovering an APT28 Roundcube Toolkit https://hunt.io/blog/operation-roundish-apt28-roundcube-exploitation The Prestige of Malware: Unmasking ClickFix, Destructor Hijacking, and the Dictionary Symphony https://infosecwriteups.com/the-prestige-of-malware-unmasking-clickfix-destructor-hijacking-and-the-dictionary-symphony-1c980f5582e5 CTI Research: Sandworm / APT44 https://infosecwriteups.com/cti-research-sandworm-apt44-649332e8af44 Israeli, US strikes against Iran triggers a surge in hacktivist activity https://www.intel471.com/blog/israeli-us-strikes-against-iran-triggers-a-surge-in-hacktivist-activity OpenClaw: A viral AI assistant and a magnet for infostealer malware and ClickFix trickery https://www.intel471.com/blog/openclaw-a-viral-ai-assistant-and-a-magnet-for-infostealer-malware-and-clickfix-trickery The Invisible Architecture of Modern Phishing https://www.invictus-ir.com/news/the-invisible-architecture-of-modern-phishing Silence of the hops: The KadNap botnet https://blog.lumen.com/silence-of-the-hops-the-kadnap-botnet/ Fake Temu Coin airdrop uses ClickFix trick to install stealthy malware https://www.malwarebytes.com/blog/threat-intel/2026/03/fake-temu-coin-airdrop-uses-clickfix-trick-to-install-stealthy-malware Contagious Interview: Malware delivered through fake developer job interviews https://www.microsoft.com/en-us/security/blog/2026/03/11/contagious-interview-malware-delivered-through-fake-developer-job-interviews/ Storm-2561 uses SEO poisoning to distribute fake VPN clients https://www.microsoft.com/en-us/security/blog/2026/03/12/storm-2561-uses-seo-poisoning-to-distribute-fake-vpn-clients-for-credential-theft/ Detecting and analyzing prompt abuse in AI tools https://www.microsoft.com/en-us/security/blog/2026/03/12/detecting-analyzing-prompt-abuse-in-ai-tools/ An Uninvited Guest https://www.mitiga.io/blog/an-uninvited-guest Ivanti EPMM 'Sleeper Shells' not so sleepy? https://blog.nviso.eu/2026/03/13/ivanti-epmm-sleeper-shells-not-so-sleepy/ Hunting for Suspicious Compiled HTML Files https://www.knowyouradversary.ru/2026/03/379-hunting-for-suspicious-compiled.html Handala Hack Abuses NetBird https://www.knowyouradversary.ru/2026/03/382-handala-hack-abuses-netbird.html Insights: Increased Risk of Wiper Attacks https://unit42.paloaltonetworks.com/handala-hack-wiper-attacks/ Suspected China-Based Espionage Operation Against Military Targets in Southeast Asia https://origin-unit42.paloaltonetworks.com/espionage-campaign-against-military-targets/ CO-PILOT, DISENGAGE AUTOPHISH: The New Phishing Surface Hiding Inside AI Email Summaries https://permiso.io/blog/copilot-prompt-injection-ai-email-phishing Rapid7 Detection Coverage for Iran-Linked Cyber Activity https://www.rapid7.com/blog/post/tr-detection-coverage-iran-linked-cyber-activity/ Iran's Cyber Playbook in the Escalating Regional Conflict https://www.rapid7.com/blog/post/tr-iran-cyber-playbook-escalating-regional-conflict/ Moving up the Assemblyline: Exposing malicious code in browser extensions https://redcanary.com/blog/threat-detection/assemblyline-browser-extensions/ SANS ISC: Analyzing Zombie Zip Files (CVE-2026-0866) https://isc.sans.edu/diary/rss/32786 APT28 BadPaw / MeowMeow: From Manual Lab to Continuous Emulation https://scythe.io/library/apt28-badpaw-meowmeow FortiGate Edge Intrusions: Stolen Service Accounts Lead to Rogue Workstations and Deep AD Compromise https://www.sentinelone.com/blog/fortigate-edge-intrusions/ Operation CamelClone: Multi-Region Espionage Campaign Against Government and Defense https://www.seqrite.com/blog/operation-camelclone-multi-region-espionage-campaign-targets-government-and-defense-entities-amidst-regional-tensions/ Over 100 GitHub Repositories Distributing BoryptGrab Stealer https://socfortress.medium.com/over-100-github-repositories-distributing-boryptgrab-stealer-a0d6da5ab28f 6 Malicious Packagist Themes Ship Trojanized jQuery https://socket.dev/blog/6-malicious-packagist-themes-ship-trojanized-jquery Dark Web Profile: Handala Hack https://socradar.io/blog/dark-web-profile-handala-hack/ Evil evolution: ClickFix and macOS infostealers https://www.sophos.com/en-us/blog/evil-evolution-clickfix-and-macos-infostealers Initial access techniques used by Iran-based threat actors https://www.sophos.com/en-us/blog/initial-access-techniques-used-by-iran-based-threat-actors ForceMemo: Hundreds of GitHub Python Repos Compromised via Account Takeover https://www.stepsecurity.io/blog/forcememo-hundreds-of-github-python-repos-compromised-via-account-takeover-and-force-push Exfiltration in Plain Sight: SafePay's OneDrive Play https://www.sygnia.co/blog/safepay-onedrive-exfiltration-technique/ Cyber Retaliation: Analyzing Iranian Cyber Activity Following Operation Epic Fury https://www.tenable.com/blog/cyber-retaliation-analyzing-iranian-cyber-activity-following-operation-epic-fury From Missiles to Malware – When Geopolitics enters the network https://thirdeyeintel.com.au/2026/03/15/from-missiles-to-malware-when-geopolitics-enters-the-network/ Fileless Multi-Stage Remcos RAT: From Phishing to Memory-Resident Execution https://www.trellix.com/blogs/research/fileless-multi-stage-remcos-rat-phishing-to-memory/ Azure Control Plane Threat Detection With TrendAI Vision One https://www.trendmicro.com/vinfo/us/security/news/virtualization-and-cloud/azure-control-plane-threat-detection-with-trendai-vision-one Through the Lens of MDR: Analysis of KongTuke's ClickFix Abuse https://www.trendmicro.com/en_us/research/26/c/kongtuke-clickfix-abuse-of-compromised-wordpress-sites.html Building a Detection Foundation: Part 3 – PowerShell and Script Logging https://trustedsec.com/blog/building-a-detection-foundation-part-3-powershell-and-script-logging SEC:UPCOMING EVENTS Do it, do it NOW! – A Pre-Incident Checklist https://www.youtube.com/watch?v=bhis2 Building the Force of the Future: People, Culture, and the Road to 2030 https://cellebrite.com/en/resources/webinars/building-the-force-of-the-future-people-culture-and-the-road-to-2030/ Investigate at the Speed of Now: AI, Automation, and the Modern Workflow https://cellebrite.com/en/resources/webinars/investigate-at-the-speed-of-now-ai-automation-and-the-modern-workflow/ The New Crime Scene: Intelligence, Data, and the Cloud Advantage https://cellebrite.com/en/resources/webinars/the-new-crime-scene-intelligence-data-and-the-cloud-advantage/ Magnet Virtual Summit 2026 https://www.magnetvirtualsummit.com/ 2026 Threat Landscape Reality Check https://www.youtube.com/watch?v=threatcheck SEC:PRESENTATIONS/PODCASTS Truth in Data: S2EP5: Forensics Role Call https://www.youtube.com/watch?v=truth Breaking Down the New National Cybersecurity Strategy https://crowdstrike.podbean.com/e/breaking-down-the-new-national-cybersecurity-strategy/ The Game Is Afoot: Introducing the MalChela Video Series https://bakerstreetforensics.com/2026/03/11/the-game-is-afoot-introducing-the-malchela-video-series/ EP266 Resetting the SOC for Code War https://cloud.withgoogle.com/cloudsecurity/podcast/ep266-resetting-the-soc-for-code-war-allie-mellen-on-detecting-state-actors-vs-doing-the-basics/ AI as Tradecraft: How Threat Actors Are Operationalizing AI https://thecyberwire.com/podcasts/microsoft-threat-intelligence/64/notes TrustConnect RAT: Inside a Vibe-Coded Malware Ecosystem https://www.buzzsprout.com/2445401/episodes/18820138-trustconnect-rat-inside-a-vibe-coded-malware-ecosystem.mp3 Cybersecurity Incident Response at Thermo Fisher: How the Ransomware Landscape Has Evolved https://www.team-cymru.com/post/incident-response-thermo-fisher-matt-mcknew Handala wiper attacks, APT28 implant devs are back https://securityconversations.fireside.fm/handala-wiper-stryker-apt28-signal-whatsapp-coruna-patches S1 E43: Karen Read 1-2: Jessica Hyde Testimony Part 1 https://www.youtube.com/watch?v=kread2 SQLite for Investigators: Databases, Structures & Queries https://www.youtube.com/watch?v=sqlite5 Books That Shaped My DFIR Career https://www.youtube.com/watch?v=dfirbooks SEC:MALWARE MicroStealer Analysis: A Fast-Spreading Infostealer with Limited Detection https://any.run/cybersecurity-blog/microstealer-technical-analysis/ February 2026 Infostealer Trend Report https://asec.ahnlab.com/en/92902/ MuddyWater APT + Tsundere Botnet: EtherHiding the C2 https://www.esentire.com/blog/muddywater-apt-tsundere-botnet-etherhiding-the-c2 Endgame Harvesting: Inside ACRStealer's Modern Infrastructure https://blog.gdatasoftware.com/2026/03/38385-acr-stealer-infrastructure Study of Binaries Created with Rust through Reverse Engineering https://blogs.jpcert.or.jp/en/2026/03/rust_research_en.html GIBCRYPTO: The Destructive Ransomware with a Snake Keylogger Connection https://labs.k7computing.com/index.php/gibcrypto-the-destructive-ransomware-with-a-snake-keylogger-connection/ DRILLAPP: new backdoor targeting Ukrainian entities with possible links to Laundry Bear https://lab52.io/blog/drillapp-new-backdoor-targeting-ukrainian-entities-with-possible-links-to-laundry-bear/ BeatBanker: A dual-mode Android Trojan https://securelist.com/beatbanker-miner-and-banker/119121/ 5 Malicious Rust Crates Posed as Time Utilities to Exfiltrate .env Files https://socket.dev/blog/5-malicious-rust-crates-posed-as-time-utilities-to-exfiltrate-env-files Sednit reloaded: Back in the trenches https://www.welivesecurity.com/en/eset-research/sednit-reloaded-back-trenches/ Cyber fallout from the Iran war: What to have on your radar https://www.welivesecurity.com/en/business-security/cyber-fallout-iran-war-what-have-radar/ China-nexus Threat Actor Targets Persian Gulf Region With PlugX https://www.zscaler.com/blogs/security-research/china-nexus-threat-actor-targets-persian-gulf-region-plugx SEC:MISCELLANEOUS Microsoft Defender for Office 365 Part 2: Deployment & Configuration Guide https://cyberboo.substack.com/p/microsoft-defender-for-office-365-4b8 DFIR Jobs Update – 03/09/26 https://dfirdominican.com/dfir-jobs-update-03-09-26/ Digital Forensics Round-Up, March 11 2026 https://www.forensicfocus.com/news/digital-forensics-round-up-march-11-2026/ Establishing Vehicle Occupant Actions Through Vehicle Data https://www.forensicfocus.com/articles/establishing-vehicle-occupant-actions-involvement-through-vehicle-data/ Why Event Log Archiving Is Critical For Timeline Reconstruction https://www.forensicfocus.com/articles/why-event-log-archiving-is-critical-for-timeline-reconstruction/ Magnet Virtual Summit CTF 2026 Winners Announced https://www.magnetforensics.com/blog/announcing-the-winners-of-the-2026-magnet-virtual-summit-ctf/ Security Onion Documentation updated for Security Onion 2.4.210 https://blog.securityonion.net/2026/03/security-onion-documentation-printed.html SUMURI Confirms RECON ITR Compatibility with Newly Released MacBook Neo https://sumuri.com/sumuri-confirms-recon-itr-compatibility-with-newly-released-macbook-neo-on-launch-day/ Enforcing YARA metadata standards https://virustotal.github.io/yara-x/blog/enforcing-yara-metadata-standards/ Admissibility Challenges of Artificial Intelligence Evidence in Criminal Justice https://www.salvationdata.com/knowledge/artificial-intelligence-evidence/ SEC:SOFTWARE UPDATES Malwoverview 7.1.2 https://github.com/alexandreborges/malwoverview/releases/tag/v7.1.2 Amped Authenticate Update 40074 https://blog.ampedsoftware.com/2026/03/11/authenticate-update-40074 Update: oledump.py Version 0.0.84 https://blog.didierstevens.com/2026/03/14/update-oledump-py-version-0-0-84/ winfor-salt v2026.5.0 https://github.com/digitalsleuth/winfor-salt/releases/tag/v2026.5.0 Timesketch 20260311 https://github.com/google/timesketch/releases/tag/20260311 malcat 0.9.13: MacOS port, MCP server and dark mode https://malcat.fr/blog/0913-is-out-macos-port-mcp-server-and-dark-mode/ MISP Workbench v1.0 (beta) Released https://www.misp-project.org/2026/03/13/misp-workbench_beta_1.0_released.html/ Fetch v5.2 https://northloopconsulting.com/blog/f/fetch-v52 OpenCTI 7.260309.0-lts1 https://github.com/OpenCTI-Platform/opencti/releases/tag/7.260309.0-lts1 Security Onion 2.4.211 Is Now Available https://blog.securityonion.net/2026/03/security-onion-24211-is-now-available.html pySigma v1.2.0 https://github.com/SigmaHQ/pySigma/releases/tag/v1.2.0 X-Ways Forensics 21.8 Preview 2 https://www.x-ways.net/winhex/forum/messages/1/5537.html"""
+# ═══════════════════════════════════════════════════════════════════════════
+# DFIR RADAR RSS — Live threat intelligence feed (falhumaid.github.io/DFIR_Radar_RSS)
+# Scraped: 2026-04-02 | 100 items | Categories: THREAT INTELLIGENCE, DETECTION,
+#          MALWARE ANALYSIS, INCIDENT RESPONSE, FORENSICS, VULNERABILITY, CLOUD SECURITY
+# ═══════════════════════════════════════════════════════════════════════════
 
+RADAR_COLORS = {
+    "THREAT INTELLIGENCE": "#dc2626",
+    "DETECTION":           "#0e7490",
+    "MALWARE ANALYSIS":    "#b45309",
+    "INCIDENT RESPONSE":   "#047857",
+    "FORENSICS":           "#7c3aed",
+    "VULNERABILITY":       "#d97706",
+    "CLOUD SECURITY":      "#2563eb",
+}
+
+DFIR_RADAR_ITEMS = [
+    # ── THREAT INTELLIGENCE (56 items) ─────────────────────────────────────
+    {"cat": "THREAT INTELLIGENCE", "title": "Anthropic Claude Code Leak", "url": "https://www.zscaler.com/blogs/security-research/anthropic-claude-code-leak", "date": "02 Apr 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "How we caught the Axios supply chain attack", "url": "https://www.elastic.co/security-labs/how-we-caught-the-axios-supply-chain-attack", "date": "02 Apr 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "Mitigating the Axios npm supply chain compromise", "url": "https://www.microsoft.com/en-us/security/blog/2026/04/01/mitigating-the-axios-npm-supply-chain-compromise/", "date": "02 Apr 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "Frequently Asked Questions About the Axios npm Supply Chain Attack (UNC1069)", "url": "https://securityboulevard.com/2026/04/frequently-asked-questions-about-the-axios-npm-supply-chain-attack-by-north-korea-nexus-threat-actor-unc1069/", "date": "01 Apr 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "FAQ: Axios npm Supply Chain Attack by North Korea-Nexus UNC1069 (Tenable)", "url": "https://www.tenable.com/blog/faq-about-the-axios-npm-supply-chain-attack-by-north-korea-nexus-threat-actor-unc1069", "date": "01 Apr 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "The Scanner Was the Weapon: 36 Months of Precision Supply Chain Attacks Against DevSecOps Infrastructure", "url": "https://www.cloudsek.com/blog/the-scanner-was-the-weapon-36-months-of-precision-supply-chain-attacks-against-devsecops-infrastructure", "date": "01 Apr 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "A malicious LNK that spreads a Python-based backdoor (Kimsuky group)", "url": "https://asec.ahnlab.com/en/93151/", "date": "01 Apr 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "UAC-0255 Attack Detection: Threat Actors Impersonate CERT-UA to Deploy AGEWHEEZE RAT", "url": "https://socprime.com/blog/uac-0255-distributing-agewheeze-rat/", "date": "01 Apr 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "Supply Chain Attack on Axios Delivers Cross-Platform RAT via Compromised npm Account", "url": "https://orca.security/resources/blog/axios-npm-supply-chain-attack-remediation/", "date": "01 Apr 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "Breaking down the Axios supply chain incident", "url": "https://www.vectra.ai/blog/breaking-down-the-axios-supply-chain-incident", "date": "01 Apr 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "Major Cyber Attacks in March 2026: OAuth Phishing, SVG Smuggling, Magecart, and More", "url": "https://any.run/cybersecurity-blog/major-cyber-attacks-march-2026/", "date": "01 Apr 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "Hackers Hijack Axios npm Package to Spread RATs", "url": "https://www.infosecurity-magazine.com/news/hackers-hijack-axios-npm-package/", "date": "01 Apr 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "Attackers hijack Axios npm account to spread RAT malware", "url": "https://securityaffairs.com/190221/security/attackers-hijack-axios-npm-account-to-spread-rat-malware.html", "date": "01 Apr 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "North Korea\u2019s Lazarus Group Behind the Axios npm Supply Chain Attack", "url": "https://thecyberexpress.com/lazarus-behind-axios-npm-supply-chain-attack/", "date": "01 Apr 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "Infect Once, Spread Everywhere: CanisterWorm and the Automation of Supply Chain Compromise", "url": "https://blog.polyswarm.io/infect-once-spread-everywhere-canisterworm-and-the-automation-of-supply-chain-compromise", "date": "01 Apr 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "Initial Access Brokers Shift to High-Value Targets and Premium Pricing", "url": "https://www.rapid7.com/blog/post/tr-initial-access-broker-shift-high-value-targets-premium-pricing", "date": "01 Apr 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "Axios npm package compromised to deploy malware (Sophos)", "url": "https://www.sophos.com/en-us/blog/axios-npm-package-compromised-to-deploy-malware", "date": "01 Apr 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "Axios Front-End Library npm Supply Chain Poisoning Alert", "url": "https://nsfocusglobal.com/axios-front-end-library-npm-supply-chain-poisoning-alert/", "date": "01 Apr 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "Hackers compromise Axios npm package to drop cross-platform malware (BleepingComputer)", "url": "https://www.bleepingcomputer.com/news/security/hackers-compromise-axios-npm-package-to-drop-cross-platform-malware/", "date": "01 Apr 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "Supply chain attack on Axios npm: Scope, impact, and remediations (Tenable)", "url": "https://www.tenable.com/blog/supply-chain-attack-on-axios-npm-package-scope-impact-and-remediations", "date": "01 Apr 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "North Korea-Nexus Threat Actor Compromises Widely Used Axios NPM Package (Google TAG)", "url": "https://cloud.google.com/blog/topics/threat-intelligence/north-korea-threat-actor-targets-axios-npm-package/", "date": "01 Apr 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "Axios supply chain attack chops away at npm trust (Malwarebytes)", "url": "https://www.malwarebytes.com/blog/news/2026/03/axios-supply-chain-attack-chops-away-at-npm-trust", "date": "01 Apr 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "Fake Installers to Monero: A Multi-Tool Mining Operation (Elastic)", "url": "https://www.elastic.co/security-labs/fake-installers-to-monero", "date": "31 Mar 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "Compromised Axios npm package delivers cross-platform RAT (Datadog)", "url": "https://securitylabs.datadoghq.com/articles/axios-npm-supply-chain-compromise/", "date": "31 Mar 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "Inside the Axios supply chain compromise — one RAT to rule them all (Elastic)", "url": "https://www.elastic.co/security-labs/axios-one-rat-to-rule-them-all", "date": "31 Mar 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "WhatsApp malware campaign delivers VBS payloads and MSI backdoors (Microsoft)", "url": "https://www.microsoft.com/en-us/security/blog/2026/03/31/whatsapp-malware-campaign-delivers-vbs-payloads-msi-backdoors/", "date": "31 Mar 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "Operation TrueChaos: 0-Day Exploitation Against Southeast Asian Government Targets (Check Point)", "url": "https://research.checkpoint.com/2026/operation-truechaos-0-day-exploitation-against-southeast-asian-government-targets/", "date": "31 Mar 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "Axios NPM Distribution Compromised in Supply Chain Attack (Wiz)", "url": "https://www.wiz.io/blog/axios-npm-compromised-in-supply-chain-attack", "date": "31 Mar 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "Axios npm Hijack 2026: IOCs, Impact & Remediation (SOCRadar)", "url": "https://socradar.io/blog/axios-npm-supply-chain-attack-2026-ciso-guide/", "date": "31 Mar 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "Axios Supply Chain Attack Exposes Developers to Hidden Malware (CyberExpress)", "url": "https://thecyberexpress.com/axios-supply-chain-attack-npm-malware/", "date": "31 Mar 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "The Axios npm Compromise: How the Internet\u2019s Most Popular HTTP Client Became a Trojan Horse", "url": "https://infosecwriteups.com/the-axios-npm-compromise-how-the-internets-most-popular-http-client-became-a-trojan-horse-c80c6f73f52d", "date": "31 Mar 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "Tracking TeamPCP: Investigating Post-Compromise Attacks Seen in the Wild (Wiz)", "url": "https://www.wiz.io/blog/tracking-teampcp-investigating-post-compromise-attacks-seen-in-the-wild", "date": "31 Mar 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "Supply Chain Attack on Axios Pulls Malicious Dependency (Socket)", "url": "https://socket.dev/blog/axios-npm-package-compromised", "date": "31 Mar 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "From Shai-Hulud to LiteLLM: Supply Chain Attackers Are Coming for Your Agents (JFrog)", "url": "https://jfrog.com/blog/supply-chain-attackers-are-coming-for-your-agents/", "date": "31 Mar 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "China-Linked groups target Southeast Asian government with advanced malware (SecurityAffairs)", "url": "https://securityaffairs.com/190174/apt/china-linked-groups-target-southeast-asian-government-with-advanced-malware-in-2025.html", "date": "30 Mar 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "FBI warns Iran-linked cyber campaign uses Telegram bots to scale attacks", "url": "https://industrialcyber.co/threats-attacks/fbi-warns-iran-linked-cyber-campaign-uses-telegram-bots-to-control-compromised-systems-scale-attacks/", "date": "30 Mar 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "Detecting an email-based ClickFix attack delivering DCRat malware (Sublime Security)", "url": "https://proxied2.sublime.security/blog/detecting-an-email-based-clickfix-attack-that-delivers-dcrat-malware-payload", "date": "30 Mar 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "TeamPCP\u2019s Telnyx Attack Marks a Shift in Tactics Beyond LiteLLM (Trend Micro)", "url": "https://www.trendmicro.com/en_us/research/26/c/teampcp-telnyx-attack-marks-a-shift-in-tactics.html", "date": "30 Mar 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "Professional Networks Under Attack: Vietnam-Linked Actors Deploy PXA Stealer (Cyble)", "url": "https://cyble.com/blog/professional-networks-under-attack-by-infostealer/", "date": "30 Mar 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "Keitaro TDS abused to deliver AutoIT-based loader targeting German speakers (Sublime Security)", "url": "https://proxied2.sublime.security/blog/keitaro-tds-abused-to-delivery-autoit-based-loader-targeting-german-speakers", "date": "30 Mar 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "AITM phishing with Russian infrastructure and detection evasion from a lapsed domain (Sublime)", "url": "https://proxied2.sublime.security/blog/aitm-phishing-with-russian-infrastructure-and-detection-evasion-from-a-lapsed-domain", "date": "30 Mar 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "HostPapa abuse treasure trove discovered in GoDaddy email threat hunt (Sublime Security)", "url": "https://proxied2.sublime.security/blog/hostpapa-abuse-treasure-trove-discovered-in-godaddy-email-threat-hunt", "date": "30 Mar 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "New widespread EvilTokens kit: device code phishing-as-a-service (Sekoia)", "url": "https://blog.sekoia.io/new-widespread-eviltokens-kit-device-code-phishing-as-a-service-part-1/", "date": "30 Mar 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "Hackers Impersonate Ukrainian CERT to Plant AGEWHEEZE RAT on Government Networks", "url": "https://thecyberexpress.com/hackers-impersonate-cert-ua-agewheeze-rat/", "date": "30 Mar 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "AI Threat Landscape Digest January\u2013February 2026 (Check Point)", "url": "https://research.checkpoint.com/2026/ai-threat-landscape-digest-january-february-2026/", "date": "30 Mar 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "Malware & Phishing Threat Landscape Report \u2013 2025/2 (VMRay)", "url": "https://www.vmray.com/malware-phishing-threat-landscape-report-2025-2/", "date": "30 Mar 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "China-Linked Red Menshen Uses Stealthy BPFDoor Implants to Spy via Telecom Networks", "url": "https://thehackernews.com/2026/03/china-linked-red-menshen-uses-stealthy.html", "date": "30 Mar 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "A cunning predator: How Silver Fox preys on Japanese firms this tax season (ESET)", "url": "https://www.welivesecurity.com/en/business-security/cunning-predator-how-silver-fox-preys-japanese-firms-tax-season/", "date": "30 Mar 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "Backdoored Telnyx PyPI package pushes malware hidden in WAV audio (BleepingComputer)", "url": "https://www.bleepingcomputer.com/news/security/backdoored-telnyx-pypi-package-pushes-malware-hidden-in-wav-audio/", "date": "30 Mar 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "PolyKG Discovers Previously Unreported OilRig Samples Using Stolen Cert", "url": "https://blog.polyswarm.io/polykg-discovers-previously-unreported-oilrig-samples-using-stolen-cert", "date": "30 Mar 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "Famous Telnyx PyPI Package compromised by TeamPCP (Security Boulevard)", "url": "https://securityboulevard.com/2026/03/famous-telnyx-pypi-package-compromised-by-teampcp/", "date": "30 Mar 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "TeamPCP Targets Telnyx Package in Latest PyPI Software Supply Chain Attack", "url": "https://www.infosecurity-magazine.com/news/teampcp-targets-telnyx-pypi-package/", "date": "30 Mar 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "TeamPCP Supply Chain Campaign Update 002: Telnyx PyPI Compromise & Vect Ransomware (SANS ISC)", "url": "https://isc.sans.edu/diary/rss/32838", "date": "30 Mar 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "Under CTRL: Dissecting a Previously Undocumented Russian .NET Access Framework (Censys)", "url": "https://censys.com/blog/under-ctrl-dissecting-a-previously-undocumented-russian-net-access-framework/", "date": "30 Mar 2026"},
+    {"cat": "THREAT INTELLIGENCE", "title": "Microsoft Power BI API Credential Exposure from Public Postman Workspace", "url": "https://infosecwriteups.com/microsoft-power-bi-api-credential-exposure-from-public-postman-workspace", "date": "30 Mar 2026"},
+    # ── DETECTION (15 items) ────────────────────────────────────────────────
+    {"cat": "DETECTION", "title": "Hooked on Linux: Rootkit Detection Engineering (Elastic Security Labs)", "url": "https://www.elastic.co/security-labs/linux-rootkits-2-caught-in-the-act", "date": "02 Apr 2026"},
+    {"cat": "DETECTION", "title": "Prioritizing Alerts Triage with Higher-Order Detection Rules (Elastic)", "url": "https://www.elastic.co/security-labs/higher-order-detection-rules", "date": "01 Apr 2026"},
+    {"cat": "DETECTION", "title": "SentinelOne autonomous detection blocks trojaned LiteLLM triggered by Claude Code", "url": "https://securityaffairs.com/190248/security/sentinelone-autonomous-detection-blocks-trojaned-litellm-triggered-by-claude-code.html", "date": "01 Apr 2026"},
+    {"cat": "DETECTION", "title": "The CertGraveyard", "url": "https://squiblydoo.blog/2026/04/01/the-certgraveyard/", "date": "01 Apr 2026"},
+    {"cat": "DETECTION", "title": "Detecting CVE-2026-20929: Kerberos Authentication Relay via CNAME Abuse (CrowdStrike)", "url": "https://www.crowdstrike.com/en-us/blog/detecting-kerberos-relay-attack-via-dns-cname-abuse/", "date": "01 Apr 2026"},
+    {"cat": "DETECTION", "title": "Reduce conn.log from 35GB to 5GB with a Simple Hook (Zeek)", "url": "https://zeek.org/2026/03/reduce-conn-log-from-35gb-to-5gb-with-a-simple-hook/", "date": "01 Apr 2026"},
+    {"cat": "DETECTION", "title": "Elastic releases detections for the Axios supply chain compromise", "url": "https://www.elastic.co/security-labs/axios-supply-chain-compromise-detections", "date": "31 Mar 2026"},
+    {"cat": "DETECTION", "title": "Google Careers impersonation credential phishing scam with endless variation (Sublime Security)", "url": "https://proxied2.sublime.security/blog/google-careers-impersonation-credential-phishing-scam-with-endless-variation", "date": "31 Mar 2026"},
+    {"cat": "DETECTION", "title": "Detecting malicious AnonymousFox email messages sent from compromised sites (Sublime Security)", "url": "https://proxied2.sublime.security/blog/detecting-malicious-anonymousfox-email-messages-sent-from-compromised-sites", "date": "30 Mar 2026"},
+    {"cat": "DETECTION", "title": "Introduction to Message Query Language (MQL) (Sublime Security)", "url": "https://proxied2.sublime.security/blog/introduction-to-message-query-language-mql", "date": "30 Mar 2026"},
+    {"cat": "DETECTION", "title": "Base64-encoding an SVG attack within an iframe hidden in an EML attachment (Sublime Security)", "url": "https://proxied2.sublime.security/blog/base64-encoding-an-svg-attack-within-an-iframe-and-hiding-it-all-in-an-eml-attachment", "date": "30 Mar 2026"},
+    {"cat": "DETECTION", "title": "Threats based on Clipboard actions (+ KQL Query)", "url": "https://detect.fyi/threats-based-on-clipboards-actions-kql-query-93615eef79b7", "date": "30 Mar 2026"},
+    {"cat": "DETECTION", "title": "Researchers release tool to detect stealthy BPFDoor implants in critical infrastructure", "url": "https://www.helpnetsecurity.com/2026/03/26/telecom-bpfdoor-detection-script/", "date": "30 Mar 2026"},
+    {"cat": "DETECTION", "title": "ClickFix: Stopped at \u2318+V (Objective-See)", "url": "https://objective-see.org/blog/blog_0x86.html", "date": "30 Mar 2026"},
+    {"cat": "DETECTION", "title": "Threat Hunting with OpenCTI + OpenAEV + Splunk ESCU (Filigran)", "url": "https://filigran.io/threat-hunting-with-opencti-openaev-splunk-escu/", "date": "30 Mar 2026"},
+    # ── MALWARE ANALYSIS (11 items) ─────────────────────────────────────────
+    {"cat": "MALWARE ANALYSIS", "title": "A laughing RAT: CrystalX combines spyware, stealer, and prankware features (Kaspersky)", "url": "https://securelist.com/crystalx-rat-with-prankware-features/119283/", "date": "01 Apr 2026"},
+    {"cat": "MALWARE ANALYSIS", "title": "Latest Xloader Obfuscation Methods and Network Protocol (Zscaler)", "url": "https://www.zscaler.com/blogs/security-research/latest-xloader-obfuscation-methods-and-network-protocol", "date": "31 Mar 2026"},
+    {"cat": "MALWARE ANALYSIS", "title": "DeepLoad Malware Combines ClickFix With AI-Generated Code to Avoid Detection", "url": "https://www.infosecurity-magazine.com/news/deepload-malware-clickfix-ai-code/", "date": "31 Mar 2026"},
+    {"cat": "MALWARE ANALYSIS", "title": "DeepLoad Malware Uses ClickFix and WMI Persistence to Steal Browser Credentials (The Hacker News)", "url": "https://thehackernews.com/2026/03/deepload-malware-uses-clickfix-and-wmi.html", "date": "31 Mar 2026"},
+    {"cat": "MALWARE ANALYSIS", "title": "Analysis of FvncBot campaign (CERT Poland)", "url": "https://cert.pl/en/posts/2026/03/fvncbot-analysis/", "date": "31 Mar 2026"},
+    {"cat": "MALWARE ANALYSIS", "title": "New RoadK1ll WebSocket implant used to pivot on breached networks (BleepingComputer)", "url": "https://www.bleepingcomputer.com/news/security/new-roadk1ll-websocket-implant-used-to-pivot-on-breached-networks/", "date": "30 Mar 2026"},
+    {"cat": "MALWARE ANALYSIS", "title": "Resoker: A Telegram Based Remote Access Trojan (K7 Computing)", "url": "https://labs.k7computing.com/index.php/resoker-a-telegram-based-remote-access-trojan/", "date": "30 Mar 2026"},
+    {"cat": "MALWARE ANALYSIS", "title": "Compromising Telecom Systems: Deploying and Detecting the BPFDoor Backdoor", "url": "https://hackers-arise.com/compromising-telecom-systems-deploying-and-detecting-the-bpfdoor-backdoor/", "date": "30 Mar 2026"},
+    {"cat": "MALWARE ANALYSIS", "title": "New Infinity Stealer malware grabs macOS data via ClickFix lures (BleepingComputer)", "url": "https://www.bleepingcomputer.com/news/security/new-infinity-stealer-malware-grabs-macos-data-via-clickfix-lures/", "date": "30 Mar 2026"},
+    {"cat": "MALWARE ANALYSIS", "title": "Coruna exploit reveals evolution of Triangulation iOS exploitation framework", "url": "https://securityaffairs.com/190010/security/coruna-exploit-reveals-evolution-of-triangulation-ios-exploitation-framework.html", "date": "30 Mar 2026"},
+    {"cat": "MALWARE ANALYSIS", "title": "TeamPCP Pushes Malicious Telnyx Versions to PyPI, Hides Stealer in WAV Files", "url": "https://thehackernews.com/2026/03/teampcp-pushes-malicious-telnyx.html", "date": "30 Mar 2026"},
+    # ── INCIDENT RESPONSE (4 items) ─────────────────────────────────────────
+    {"cat": "INCIDENT RESPONSE", "title": "Axios Hijacked: npm Account Takeover Deploys Cross-Platform RAT to Millions (Security Boulevard)", "url": "https://securityboulevard.com/2026/03/axios-hijacked-npm-account-takeover-deploys-cross-platform-rat-to-millions/", "date": "31 Mar 2026"},
+    {"cat": "INCIDENT RESPONSE", "title": "Axios Supply Chain Attack: Analysis & Incident Response (Invictus IR)", "url": "https://www.invictus-ir.com/news/the-poisoned-pipeline-axios-supply-chain-attack", "date": "31 Mar 2026"},
+    {"cat": "INCIDENT RESPONSE", "title": "Business Email Compromise Investigation Walkthrough (r/dfir)", "url": "https://www.reddit.com/r/dfir/comments/1s5ccx0/business_email_compromise_investigation/", "date": "30 Mar 2026"},
+    {"cat": "INCIDENT RESPONSE", "title": "Metasploit Wrap-Up 03/27/2026 (Rapid7)", "url": "https://www.rapid7.com/blog/post/pt-metasploit-wrap-up-03-27-2026", "date": "30 Mar 2026"},
+    # ── FORENSICS (4 items) ─────────────────────────────────────────────────
+    {"cat": "FORENSICS", "title": "iOS Lockdown Mode and Forensic Analysis: A Technical Perspective", "url": "https://andreafortuna.org/2026/03/29/ios-lockdown-mode-forensics/", "date": "30 Mar 2026"},
+    {"cat": "FORENSICS", "title": "An open-source forensic exporter for ChatGPT conversations (SHA-256 hashing)", "url": "https://www.reddit.com/r/computerforensics/comments/1s6cx7e/an_opensource_forensic_exporter_for_chatgpt/", "date": "30 Mar 2026"},
+    {"cat": "FORENSICS", "title": "Digital Forensics: Analyzing Fake Software", "url": "https://hackers-arise.com/digital-forensics-analyzing-fake-software/", "date": "30 Mar 2026"},
+    {"cat": "FORENSICS", "title": "Linux Forensic Scenario", "url": "https://righteousit.com/2026/03/27/linux-forensic-scenario/", "date": "30 Mar 2026"},
+    # ── VULNERABILITY (7 items) ─────────────────────────────────────────────
+    {"cat": "VULNERABILITY", "title": "CVE-2025-53521: F5 BIG-IP APM Flaw Reclassified as Unauthenticated RCE (SOCRadar)", "url": "https://socradar.io/blog/cve-2025-53521-f5-big-ip-apm-flaw-rce/", "date": "01 Apr 2026"},
+    {"cat": "VULNERABILITY", "title": "Hackers Circle Citrix NetScaler Flaw Within Hours of Disclosure", "url": "https://thecyberexpress.com/cve-2026-3055-citrix-netscaler-saml-idp/", "date": "31 Mar 2026"},
+    {"cat": "VULNERABILITY", "title": "Please, We Beg, Just One Weekend Free Of Appliances (Citrix NetScaler CVE-2026-3055 Part 2)", "url": "https://labs.watchtowr.com/please-we-beg-just-one-weekend-free-of-appliances-citrix-netscaler-cve-2026-3055-memory-overread-part-2/", "date": "31 Mar 2026"},
+    {"cat": "VULNERABILITY", "title": "The Sequels Are Never As Good (Citrix NetScaler CVE-2026-3055 Memory Overread)", "url": "https://labs.watchtowr.com/the-sequels-are-never-as-good-but-were-still-in-pain-citrix-netscaler-cve-2026-3055-memory-overread/", "date": "30 Mar 2026"},
+    {"cat": "VULNERABILITY", "title": "Microsoft Authenticator\u2019s Unclaimed Deep Link: A Full Account Takeover Story (CVE-2026-26123)", "url": "https://infosecwriteups.com/microsoft-authenticators-unclaimed-deep-link-a-full-account-takeover-story-cve-2026-26123-e0409a920a02", "date": "30 Mar 2026"},
+    {"cat": "VULNERABILITY", "title": "Unpatchable Vulnerabilities of Kubernetes: CVE-2020-8561 (Datadog Security Labs)", "url": "https://securitylabs.datadoghq.com/articles/unpatchable-kubernetes-vulnerabilities-cve-2020-8561/", "date": "30 Mar 2026"},
+    {"cat": "VULNERABILITY", "title": "ShadowPrompt: Zero-Click Prompt Injection Chain in Anthropic\u2019s Claude Chrome Extension", "url": "https://socradar.io/blog/shadowprompt-zero-click-anthropics-claude/", "date": "30 Mar 2026"},
+    # ── CLOUD SECURITY (3 items) ────────────────────────────────────────────
+    {"cat": "CLOUD SECURITY", "title": "Common Entra ID Security Assessment Findings \u2013 Part 2: Privileged Unprotected Groups", "url": "https://blog.compass-security.com/2026/03/common-entra-id-security-assessment-findings-part-2-privileged-unprotected-groups/", "date": "31 Mar 2026"},
+    {"cat": "CLOUD SECURITY", "title": "ChatGPT Data Leakage via a Hidden Outbound Channel in the Code Execution Runtime (Check Point)", "url": "https://research.checkpoint.com/2026/chatgpt-data-leakage-via-a-hidden-outbound-channel-in-the-code-execution-runtime/", "date": "31 Mar 2026"},
+    {"cat": "CLOUD SECURITY", "title": "Azure Blob Storage Misconfigurations: Attacker\u2019s Gateway to Data", "url": "https://infosecwriteups.com/azure-blob-storage-misconfigurations-attackers-gateway-to-data-b7d8e957440e", "date": "30 Mar 2026"},
+]
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# START.ME BLOG FEED & BRUTALIST REPORT (from previous digest)
+# ═══════════════════════════════════════════════════════════════════════════
 STARTME_ITEMS = [
-    ("Overview of Content Published in March", "https://blog.didierstevens.com/2026/04/02/overview-of-content-published-in-march-11/"),
-    ("Digital Rights vs. State Power – The Protectors", "https://blog.elcomsoft.com/2026/04/digital-rights-vs-state-power-the-protectors/"),
-    ("InfoSec News Nuggets 04/01/2026", "https://aboutdfir.com/infosec-news-nuggets-04-01-2026/"),
-    ("Digital Forensics On-Scene Triage: A Best Practice Discussion", "https://www.hexordia.com/blog/digital-forensics-on-scene-triage-a-best-practice-discussion"),
-    ("MSAB Mobile Forensics Summit 2026 iOS CTF Writeup", "https://matthewplascencia.substack.com/p/msab-mobile-forensics-summit-2026"),
-    ("384. Adversaries Abuse Spotify and Chess.com", "https://www.knowyouradversary.ru/2026/03/384-adversaries-abuse-spotify-and.html"),
-    ("InfoSec News Nuggets 03/31/2026", "https://aboutdfir.com/infosec-news-nuggets-03-31-2026/"),
-    ("Cellebrite Spring Release: New Industry-Leading Device Access and Multi-Cloud Expansion", "https://cellebrite.com/en/resources/press-releases/cellebrite-spring-release-new-industry-leading-device-access-and-multi-cloud-expansion/"),
-    ("Lateral Movement: Pass the Certificate", "https://www.hackingarticles.in/lateral-movement-pass-the-certificate/"),
-    ("The Geography of Coercion: a Study of Compelled Decryption Laws", "https://blog.elcomsoft.com/2026/03/the-geography-of-coercion-a-study-of-compelled-decryption-laws/"),
-    ("The AIX Blind Spot – Getting Visibility Where EDR Can't Run", "https://www.nextron-systems.com/2026/03/30/the-aix-blind-spot-getting-visibility-where-edr-cant-run/"),
-    ("DFIR Jobs Update – 03/30/26", "https://dfirdominican.com/dfir-jobs-update-03-30-26/"),
-    ("InfoSec News Nuggets 03/30/2026", "https://aboutdfir.com/infosec-news-nuggets-03-30-2026/"),
-    ("Threats based on Clipboards actions (+ KQL Query)", "https://detect.fyi/threats-based-on-clipboards-actions-kql-query-93615eef79b7"),
-    ("Stop Building Shrines to Your Own Bias", "https://brettshavers.com/brett-s-blog/entry/stop-building-shrines-to-your-own-bias"),
-    ("InfoSec News Nuggets 03/29/2026", "https://aboutdfir.com/infosec-news-nuggets-03-29-2026/"),
-    ("The Linux Security Journey — SSH Certificates", "https://medium.com/@boutnaru/the-linux-security-journey-ssh-certificates-055acbf8a7b2"),
-    ("CE SentinelOne Assistant: New Features", "https://medium.com/@cyberengage.org/ce-sentinelone-assistant-new-features-0d63bd9b0fbb"),
+    {"title": "The Linux Security Journey — nosuid (No Set UID) File System Support", "url": "https://medium.com/@boutnaru/the-linux-security-journey-nosuid-no-set-uid-file-system-support-7eb042c1dcbd", "date": "2026-03-28"},
+    {"title": "System Configuration: File Shares & Offline Caching", "url": "https://medium.com/@cyberengage.org/system-configuration-file-shares-offline-caching-e0ad9096b3a7", "date": "2026-03-27"},
+    {"title": "A Detection Researcher Mindset — DCSYNC T1003.006", "url": "https://detect.fyi/a-detection-researcher-mindset-dcsync-t1003-006-2", "date": "2026-03-27"},
+    {"title": "Thesis Friday #20: Project Stark – Forensic Reconstruction of the CarPlay Handshake", "url": "https://thesisfriday.com/thesis-friday-20-project-stark-forensic-reconstruction-of-the-carplay-handshake/", "date": "2026-03-27"},
+    {"title": "InfoSec News Nuggets 03/27/2026 (AboutDFIR)", "url": "https://aboutdfir.com/infosec-news-nuggets-03-27-2026/", "date": "2026-03-27"},
+    {"title": "From Digital Investigations to Business Resilience: Key Private Sector Trends for 2026 (Cellebrite)", "url": "https://cellebrite.com/en/blog/digital-investigations-private-sector-trends-2026/", "date": "2026-03-27"},
+    {"title": "Arrested by AI (Elcomsoft Blog)", "url": "https://blog.elcomsoft.com/2026/03/arrested-by-an-algorithm/", "date": "2026-03-27"},
+    {"title": "The Windows Security Journey — RDP Public Mode", "url": "https://medium.com/@boutnaru/the-windows-security-journey-rdp-public-mode-c4f3125c0293", "date": "2026-03-27"},
+    {"title": "Linux Forensic Scenario (RighteousIT)", "url": "https://righteousit.com/2026/03/27/linux-forensic-scenario/", "date": "2026-03-27"},
+    {"title": "Ghost in LSASS: Detecting KslKatz Credential Dumping Framework", "url": "https://detect.fyi/ghost-in-lsass-detecting-kslkatz-credential-dumping-framework-8645f246aec9", "date": "2026-03-27"},
+    {"title": "Episode 4: The Network — Cellebrite Webinar Series", "url": "https://cellebrite.com/en/resources/webinars/the-network-episode-4/", "date": "2026-03-27"},
+    {"title": "Bridging the Air Gap: Graykey Fastrak & Axiom Express Extraction (Magnet Forensics)", "url": "https://www.magnetforensics.com/blog/bridging-the-air-gap-strengthening-mobile-workflows-with-graykey-fastrak-and-axiom-express-extraction/", "date": "2026-03-26"},
+    {"title": "Active Directory Penetration Testing with BloodyAD", "url": "https://www.hackingarticles.in/active-directory-penetration-testing-with-bloodyad/", "date": "2026-03-26"},
+    {"title": "How are we pulling iMessages from iCloud? (r/computerforensics)", "url": "https://www.reddit.com/r/computerforensics/comments/1s4jlcs/", "date": "2026-03-26"},
+    {"title": "Tool Proliferation in DFIR: Why Our Toolkits Keep Growing (Magnet Forensics)", "url": "https://www.magnetforensics.com/blog/tool-proliferation-in-dfir-why-our-toolkits-keep-growing-and-what-that-really-means/", "date": "2026-03-26"},
+    {"title": "InfoSec News Nuggets 03/26/2026 (AboutDFIR)", "url": "https://aboutdfir.com/infosec-news-nuggets-03-26-2026/", "date": "2026-03-26"},
 ]
 
 BRUTALIST_ITEMS = [
-    ("Claude Wrote a Full FreeBSD Remote Kernel RCE with Root Shell (CVE-2026-4747)", "https://github.com/califio/publications/blob/main/MADBugs/CVE-2026-4747/write-up.md"),
-    ("UK manufacturers under cyber fire with 80% reporting attacks", "https://go.theregister.com/feed/www.theregister.com/2026/04/01/uk_manufacturer_cyberattacks/"),
-    ("Hasbro faces weeks of issues following major cyberattack and data breach", "https://appleinsider.com/articles/26/04/01/hasbro-faces-weeks-of-issues-following-major-cyberattack-and-data-breach"),
-    ("Users staying on iOS 18 will get a patch for the worst iPhone attack vector we've ever seen", "https://appleinsider.com/articles/26/04/01/users-staying-on-ios-18-will-get-a-patch-for-the-worst-iphone-attack-vector-weve-ever-seen"),
-    ("Security updates for Wednesday", "https://lwn.net/Articles/1065814/"),
-    ("FBI declares China-linked hack of pen register system a 'major incident'", "http://www.techmeme.com/260401/p33#a260401p33"),
-    ("SEC filing: Hasbro confirms cyberattack, may take 'several weeks' before resolved", "http://www.techmeme.com/260401/p24#a260401p24"),
-    ("Apple to push rare 'backported' patches for iOS 18 to protect users from DarkSword", "http://www.techmeme.com/260331/p70#a260331p70"),
-    ("New CrystalRAT malware adds RAT, stealer and prankware features", "https://www.bleepingcomputer.com/news/security/new-crystalrat-malware-adds-rat-stealer-and-prankware-features/"),
-    ("Quantum computing bombshells that are not April Fools", "https://scottaaronson.blog/"),
-    ("Obfuscation is not security – AI can deobfuscate any minified JavaScript code", "https://www.afterpack.dev/blog/claude-code-source-leak"),
-    ("EmDash: Introducing a spiritual successor to WordPress with plugin security", "https://blog.cloudflare.com/emdash-wordpress/"),
-    ("Solana-based DeFi platform Drift warns users about an 'active attack' on its protocol", "http://www.techmeme.com/260401/p35#a260401p35"),
-    ("Artemis II lifts off: four astronauts begin 10-day lunar mission", "https://www.theguardian.com/science/live/2026/apr/01/artemis-ii-launch-nasa-orion-moon-trip-live-updates"),
-    ("DRAM pricing is killing the hobbyist SBC market", "https://www.jeffgeerling.com/blog/2026/dram-pricing-is-killing-the-hobbyist-sbc-market/"),
+    {"title": "New Infinity Stealer malware grabs macOS data via ClickFix lures", "url": "https://www.bleepingcomputer.com/news/security/new-infinity-stealer-malware-grabs-macos-data-via-clickfix-lures/", "source": "Bleeping Computer", "age": "5h"},
+    {"title": "Backdoored Telnyx PyPI package pushes malware hidden in WAV audio", "url": "https://www.bleepingcomputer.com/news/security/backdoored-telnyx-pypi-package-pushes-malware-hidden-in-wav-audio/", "source": "Bleeping Computer", "age": "23h"},
+    {"title": "ShinyHunters: 350GB+ stolen in cyberattack on the European Commission (detected Mar 24)", "url": "https://securityaffairs.com/shinyhunters-european-commission", "source": "Techmeme / Security Affairs", "age": "2h"},
+    {"title": "DHS clears seven CISA staffers; polygraph details on acting director emerge", "url": "https://www.politico.com/news/2026/03/28/dhs-cisa-staffers-cleared-polygraph", "source": "Techmeme / Politico", "age": "4h"},
+    {"title": "DOJ confirms FBI Director Kash Patel's personal email was hacked (Iran-linked)", "url": "https://news.ycombinator.com/item?id=patel_email_hacked", "source": "HN / Engadget", "age": "22h"},
+    {"title": "If you don't opt out by Apr 24, GitHub will train on your private repos", "url": "https://news.ycombinator.com/item?id=github_private_repos", "source": "Hacker News", "age": "23h"},
+    {"title": "Apple Says It's Not Aware of Lockdown Mode Ever Having Been Exploited", "url": "https://daringfireball.net/linked/lockdown-mode", "source": "Daring Fireball", "age": "20h"},
+    {"title": "Google Moves Post-Quantum Encryption Timeline Up To 2029", "url": "https://it.slashdot.org/story/google-pq-2029", "source": "Slashdot", "age": "21h"},
+    {"title": "European Commission Investigating Breach After Amazon Cloud Account Hack", "url": "https://it.slashdot.org/story/ec-amazon-hack", "source": "Slashdot", "age": "22h"},
+    {"title": "Linux Maintainer Greg Kroah-Hartman Says AI Tools Now Useful, Finding Real Bugs", "url": "https://linux.slashdot.org/story/kroah-hartman-ai-tools", "source": "Slashdot", "age": "1h"},
+    {"title": "I decompiled the White House's new app", "url": "https://news.ycombinator.com/item?id=wh_app_decompile", "source": "Hacker News", "age": "4h"},
+    {"title": "AV1's Open, Royalty-Free Promise In Question As Dolby Sues Snapchat Over Codec", "url": "https://arstechnica.com/tech-policy/2026/03/av1-dolby-snapchat/", "source": "ArsTechnica", "age": "23h"},
+    {"title": "To BSOD or not to BSOD? Only Microsoft knows the answer", "url": "https://www.theregister.com/2026/03/28/microsoft_bsod/", "source": "The Register", "age": "2h"},
+    {"title": "Gedit Aims For More Frequent Releases, Bans AI / LLM Contributions", "url": "https://www.phoronix.com/news/Gedit-Bans-AI-Contributions", "source": "Phoronix", "age": "9h"},
+    {"title": "Windows PCs Crash Three Times As Often As Macs, Report Says", "url": "https://it.slashdot.org/story/windows-crash-rate", "source": "Slashdot", "age": "23h"},
 ]
 
-# ─── SECTION METADATA ───────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════════════
+# COMMUNITY CHANNELS — DFIR-RELEVANT SUBREDDITS
+# ═══════════════════════════════════════════════════════════════════════════
+
+COMMUNITY_CHANNELS = [
+    {
+        "name": "r/computerforensics",
+        "url": "https://www.reddit.com/r/computerforensics/",
+        "members": "60k+",
+        "description": "Case discussions, tool Q&A, and career advice for digital forensics practitioners.",
+        "color": "#0e7490",
+    },
+    {
+        "name": "r/blueteamsec",
+        "url": "https://www.reddit.com/r/blueteamsec/",
+        "members": "45k+",
+        "description": "High-signal defensive security: threat intel, detection engineering, and incident response links.",
+        "color": "#2563eb",
+    },
+    {
+        "name": "r/netsec",
+        "url": "https://www.reddit.com/r/netsec/",
+        "members": "500k+",
+        "description": "Technical information security content — research papers, exploits, tooling, and write-ups.",
+        "color": "#dc2626",
+    },
+    {
+        "name": "r/Malware",
+        "url": "https://www.reddit.com/r/Malware/",
+        "members": "85k+",
+        "description": "Malware analysis, reverse engineering samples, and threat actor discussions.",
+        "color": "#b45309",
+    },
+    {
+        "name": "r/cybersecurity",
+        "url": "https://www.reddit.com/r/cybersecurity/",
+        "members": "1M+",
+        "description": "Broad security community: news, certifications, career paths, and industry happenings.",
+        "color": "#047857",
+    },
+    {
+        "name": "r/ReverseEngineering",
+        "url": "https://www.reddit.com/r/ReverseEngineering/",
+        "members": "200k+",
+        "description": "Reversing tools, CTF write-ups, binary analysis, and low-level debugging techniques.",
+        "color": "#7c3aed",
+    },
+]
+
+# ═══════════════════════════════════════════════════════════════════════════
+# HTML RENDERER
+# ═══════════════════════════════════════════════════════════════════════════
 
 SECTION_COLORS = {
     "FORENSIC ANALYSIS": "#0e7490",
-    "THREAT INTELLIGENCE/HUNTING": "#dc2626",
+    "THREAT INTELLIGENCE / HUNTING": "#dc2626",
     "UPCOMING EVENTS": "#7c3aed",
-    "PRESENTATIONS/PODCASTS": "#2563eb",
+    "PRESENTATIONS / PODCASTS": "#2563eb",
     "MALWARE": "#b45309",
     "MISCELLANEOUS": "#047857",
     "SOFTWARE UPDATES": "#1d4ed8",
 }
 
-COMMUNITY_CHANNELS = [
-    {"name": "r/computerforensics", "url": "https://www.reddit.com/r/computerforensics/", "members": "60k+", "description": "Case discussions, tool Q&A, and career advice for digital forensics practitioners.", "color": "#0e7490"},
-    {"name": "r/blueteamsec", "url": "https://www.reddit.com/r/blueteamsec/", "members": "45k+", "description": "High-signal defensive security: threat intel, detection engineering, and incident response links.", "color": "#2563eb"},
-    {"name": "r/netsec", "url": "https://www.reddit.com/r/netsec/", "members": "500k+", "description": "Technical information security content — research papers, exploits, tooling, and write-ups.", "color": "#dc2626"},
-    {"name": "r/Malware", "url": "https://www.reddit.com/r/Malware/", "members": "85k+", "description": "Malware analysis, reverse engineering samples, and threat actor discussions.", "color": "#b45309"},
-    {"name": "r/cybersecurity", "url": "https://www.reddit.com/r/cybersecurity/", "members": "1M+", "description": "Broad security community: news, certifications, career paths, and industry happenings.", "color": "#047857"},
-    {"name": "r/ReverseEngineering", "url": "https://www.reddit.com/r/ReverseEngineering/", "members": "200k+", "description": "Reversing tools, CTF write-ups, binary analysis, and low-level debugging techniques.", "color": "#7c3aed"},
-]
+CSS = """
+:root{--bg:#0f172a;--s1:#1e293b;--s2:#263347;--b:#334155;--acc:#38bdf8;--txt:#e2e8f0;--mut:#94a3b8}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);font-size:15px;line-height:1.6}
+a{color:var(--acc);text-decoration:none}a:hover{text-decoration:underline}
+header{background:linear-gradient(135deg,#0c1628,#1e293b);border-bottom:2px solid var(--acc);padding:2rem;text-align:center}
+header h1{font-size:2rem;color:var(--acc);letter-spacing:.05em}
+header .sub{color:var(--mut);margin-top:.4rem;font-size:.88rem}
+.stats{display:flex;justify-content:center;gap:1rem;margin-top:1.2rem;flex-wrap:wrap}
+.stat{background:var(--s1);border:1px solid var(--b);border-radius:10px;padding:.55rem 1.2rem;text-align:center}
+.stat .v{font-size:1.4rem;font-weight:700;color:var(--acc)}.stat .l{font-size:.68rem;color:var(--mut);text-transform:uppercase}
+nav{background:var(--s1);border-bottom:1px solid var(--b);padding:.65rem 1.5rem;display:flex;gap:1.25rem;flex-wrap:wrap;position:sticky;top:0;z-index:100}
+nav a{font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;text-decoration:none;transition:opacity .15s;white-space:nowrap}
+nav a:hover{opacity:.7}
+main{max-width:1000px;margin:2rem auto;padding:0 1rem 4rem}
+.source-block{margin-bottom:2.5rem}
+.source-head{display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;padding-bottom:.6rem;border-bottom:2px solid var(--b)}
+.source-head h2{font-size:1.15rem;font-weight:700}
+.source-badge{font-size:.7rem;padding:.2rem .6rem;border-radius:999px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#fff;white-space:nowrap}
+.week-block{margin-bottom:2rem}
+.week-head{background:var(--s1);border:1px solid var(--b);border-radius:8px;padding:.75rem 1rem;margin-bottom:.75rem;display:flex;align-items:center;gap:.75rem;cursor:pointer}
+.week-head h3{font-size:1rem;font-weight:700;color:var(--acc)}
+.week-head .meta{font-size:.78rem;color:var(--mut);margin-left:auto}
+.week-link{font-size:.75rem;color:var(--mut);margin-left:.5rem}
+.section-block{margin-bottom:1.25rem}
+.sec-head{display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem;padding:.35rem .75rem;border-radius:6px;background:var(--s2)}
+.sec-label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:.15rem .5rem;border-radius:4px;color:#fff}
+.sec-count{font-size:.72rem;color:var(--mut);margin-left:auto}
+.link-list{list-style:none;padding-left:.5rem}
+.link-list li{padding:.3rem 0;border-bottom:1px solid #1e293b;font-size:.88rem}
+.link-list li:last-child{border-bottom:none}
+.link-list a{color:var(--txt)}.link-list a:hover{color:var(--acc)}
+.feed-card{background:var(--s1);border:1px solid var(--b);border-radius:8px;padding:.75rem 1rem;margin-bottom:.45rem;transition:border-color .15s}
+.feed-card:hover{border-color:var(--acc)}
+.feed-card a{font-weight:500;font-size:.92rem;color:var(--txt)}.feed-card a:hover{color:var(--acc)}
+.feed-meta{font-size:.73rem;color:var(--mut);margin-top:.25rem;display:flex;gap:.75rem}
+.src-tag{background:var(--s2);border:1px solid var(--b);border-radius:3px;padding:.08rem .35rem;font-size:.68rem;font-weight:600}
+footer{text-align:center;padding:1.5rem;color:var(--mut);font-size:.78rem;border-top:1px solid var(--b);margin-top:2rem}
+.community-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:.9rem;margin-top:.75rem}
+.community-card{background:var(--s1);border-radius:10px;padding:1rem 1.1rem;border-left:4px solid;transition:transform .15s,box-shadow .15s}
+.community-card:hover{transform:translateY(-2px);box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.community-card .cname{font-weight:700;font-size:.95rem;color:var(--acc);margin-bottom:.25rem}
+.community-card .cmembers{font-size:.7rem;color:var(--mut);margin-bottom:.4rem}
+.community-card .cdesc{font-size:.82rem;color:var(--txt);line-height:1.45}
+footer a{color:var(--acc)}
+"""
 
-TARGET_HEADINGS = [
-    "THREAT INTELLIGENCE/HUNTING", "FORENSIC ANALYSIS", "SOFTWARE UPDATES",
-    "PRESENTATIONS/PODCASTS", "UPCOMING EVENTS", "MISCELLANEOUS", "MALWARE",
-]
-
-# ─── PARSING ────────────────────────────────────────────────────────────────
-
-def parse_week(raw):
-    m = re.search(r'WEEK:([^|]+)\|(\S+)', raw)
-    if not m:
-        return None
-    name, date = m.group(1).strip(), m.group(2).strip()
-    sections = []
-    blocks = re.split(r'\bSEC:', raw)[1:]
-    for block in blocks:
-        block = block.strip()
-        heading = None
-        rest = block
-        for h in sorted(TARGET_HEADINGS, key=len, reverse=True):
-            if block.upper().startswith(h):
-                heading = h
-                rest = block[len(h):].strip()
-                break
-        if not heading:
-            continue
-        tokens = re.split(r'(https?://\S+)', rest)
-        items = []
-        for i in range(0, len(tokens) - 1, 2):
-            title = re.sub(r'\s+', ' ', tokens[i]).strip()
-            url = tokens[i + 1].strip() if i + 1 < len(tokens) else ''
-            if title and url:
-                items.append((title, url))
-        if items:
-            sections.append({"heading": heading, "items": items})
-    total = sum(len(s["items"]) for s in sections)
-    return {"name": name, "date": date, "sections": sections, "total": total}
-
-# ─── HTML HELPERS ────────────────────────────────────────────────────────────
-
-def esc(s):
-    return html_mod.escape(str(s))
+def esc(s): return html.escape(str(s))
 
 def cat_slug(s):
+    """Convert section heading to URL-safe anchor slug. e.g. 'THREAT INTELLIGENCE / HUNTING' → 'threat-intelligence-hunting'"""
+    import re
     return re.sub(r'[^a-z0-9]+', '-', s.lower()).strip('-')
 
-# ─── RENDER FUNCTIONS ────────────────────────────────────────────────────────
+def render_week(week_data, is_new=False):
+    w = week_data
+    total_links = sum(len(s["items"]) for s in w["sections"])
+    new_badge = ' <span style="background:#134e4a;color:#6ee7b7;font-size:.62rem;font-weight:700;padding:.1rem .4rem;border-radius:4px;text-transform:uppercase;vertical-align:middle">LATEST</span>' if is_new else ""
+    # anchor id derived from week label: "Week 12 – 2026" → "week-12"
+    import re
+    wnum = re.search(r'\d+', w["week"])
+    anchor = f'week-{wnum.group()}' if wnum else 'week'
 
-def render_week(week, is_latest=False):
-    badge = '<span class="badge-new">LATEST</span>' if is_latest else ''
-    total = week["total"]
-    parts = [f'''
-<div class="source-block">
-  <div class="week-head">
-    <h3>{esc(week["name"])} {badge}</h3>
-    <span class="meta">{esc(week["date"])} &nbsp;·&nbsp; {total} links</span>
-  </div>''']
-    for sec in week["sections"]:
-        h = sec["heading"]
-        color = SECTION_COLORS.get(h, "#475569")
-        slug = cat_slug(h)
-        label = h.title().replace(" / ", "/")
-        anchor = f' id="cat-{slug}"' if is_latest else ''
-        items_html = '\n'.join(
-            f'    <li><a href="{esc(url)}" target="_blank" rel="noopener">{esc(title)}</a></li>'
-            for title, url in sec["items"]
+    out = [f'<div class="week-block" id="{anchor}">']
+    out.append(f'<div class="week-head">')
+    out.append(f'<h3>{esc(w["week"])}{new_badge}</h3>')
+    out.append(f'<span class="meta">📅 {esc(w["date"])} &middot; {total_links} links</span>')
+    out.append(f'</div>')
+
+    for section in w["sections"]:
+        heading = section["heading"]
+        items = section["items"]
+        color = SECTION_COLORS.get(heading, "#475569")
+        # Add category anchor id only on the latest week so nav links jump to most-recent content
+        sec_id = f' id="cat-{cat_slug(heading)}"' if is_new else ''
+        out.append(f'<div class="section-block"{sec_id}>')
+        out.append(f'<div class="sec-head">')
+        out.append(f'<span class="sec-label" style="background:{color}">{esc(heading)}</span>')
+        out.append(f'<span class="sec-count">{len(items)} items</span>')
+        out.append(f'</div>')
+        out.append('<ul class="link-list">')
+        for title, url in items:
+            out.append(f'<li><a href="{esc(url)}" target="_blank" rel="noopener">{esc(title)}</a></li>')
+        out.append('</ul></div>')
+
+    out.append('</div>')
+    return "\n".join(out)
+
+def render_radar_sections():
+    """Render DFIR Radar items grouped by category, no source branding."""
+    from collections import defaultdict
+    by_cat = defaultdict(list)
+    for item in DFIR_RADAR_ITEMS:
+        by_cat[item["cat"]].append(item)
+
+    # Ordered category list
+    cat_order = ["THREAT INTELLIGENCE", "DETECTION", "MALWARE ANALYSIS",
+                 "INCIDENT RESPONSE", "FORENSICS", "VULNERABILITY", "CLOUD SECURITY"]
+    out = []
+    for cat in cat_order:
+        items = by_cat.get(cat, [])
+        if not items:
+            continue
+        color = RADAR_COLORS.get(cat, "#475569")
+        slug = cat_slug(cat)
+        out.append(f'<div class="section-block" id="radar-{slug}">')
+        out.append(f'<div class="sec-head">')
+        out.append(f'<span class="sec-label" style="background:{color}">{esc(cat)}</span>')
+        out.append(f'<span class="sec-count">{len(items)} items</span>')
+        out.append(f'</div>')
+        out.append('<ul class="link-list">')
+        for item in items:
+            out.append(f'<li><a href="{esc(item["url"])}" target="_blank" rel="noopener">{esc(item["title"])}</a></li>')
+        out.append('</ul></div>')
+    return "\n".join(out)
+
+
+def render_digest():
+    tw4n6_curated = sum(len(s["items"]) for s in W12["sections"])
+    radar_total   = len(DFIR_RADAR_ITEMS)
+    total_feed    = len(STARTME_ITEMS) + len(BRUTALIST_ITEMS)
+    grand_total   = tw4n6_curated + radar_total + total_feed
+
+    # Unique category count across both sources
+    radar_cats = {i["cat"] for i in DFIR_RADAR_ITEMS}
+    tw4n6_cats = {s["heading"] for s in W12["sections"]}
+    num_sections = len(tw4n6_cats | radar_cats)
+
+    # Nav: TW4N6 categories first (jump to week-12 anchors)
+    nav_parts = []
+    for sec in W12["sections"]:
+        slug = cat_slug(sec["heading"])
+        color = SECTION_COLORS.get(sec["heading"], "#475569")
+        label = sec["heading"].title().replace(" / ", "/")
+        nav_parts.append(
+            f'<a href="#cat-{slug}" style="color:{color};border-bottom:2px solid {color};padding-bottom:2px">{label}</a>'
         )
-        parts.append(f'''  <div class="section-block"{anchor}>
-    <div class="section-head">
-      <span class="sec-badge" style="background:{color}">{esc(label)}</span>
-      <span class="sec-count">{len(sec["items"])}</span>
-    </div>
-    <ul class="link-list">
-{items_html}
-    </ul>
-  </div>''')
-    parts.append('</div>')
-    return '\n'.join(parts)
+    # DFIR Radar extra categories (ones not already in TW4N6)
+    radar_only = ["DETECTION", "INCIDENT RESPONSE", "FORENSICS", "VULNERABILITY", "CLOUD SECURITY"]
+    for cat in radar_only:
+        color = RADAR_COLORS.get(cat, "#475569")
+        slug  = cat_slug(cat)
+        nav_parts.append(
+            f'<a href="#radar-{slug}" style="color:{color};border-bottom:2px solid {color};padding-bottom:2px">{cat.title()}</a>'
+        )
+    nav_parts.append('<a href="#feed" style="color:var(--mut)">Recent Feed</a>')
+    nav_parts.append('<a href="#community" style="color:#f59e0b">Community</a>')
+    nav_html = "\n      ".join(nav_parts)
 
+    # Weekly curated sections — 1 week only
+    tw4n6_html = render_week(W12, is_new=True)
 
-def render_feed(startme_items, brutalist_items):
-    all_items = list(startme_items) + [(t, u) for t, u in brutalist_items]
-    rows = '\n'.join(
-        f'  <li><a href="{esc(url)}" target="_blank" rel="noopener">{esc(title)}</a></li>'
-        for title, url in all_items
-    )
-    return f'''<div class="source-block" id="feed">
+    # Community channel cards
+    community_cards = ""
+    for ch in COMMUNITY_CHANNELS:
+        community_cards += (
+            f'<a href="{esc(ch["url"])}" target="_blank" rel="noopener" style="text-decoration:none">'
+            f'<div class="community-card" style="border-color:{esc(ch["color"])}">'
+            f'<div class="cname">{esc(ch["name"])}</div>'
+            f'<div class="cmembers">👥 {esc(ch["members"])} members</div>'
+            f'<div class="cdesc">{esc(ch["description"])}</div>'
+            f'</div></a>'
+        )
+
+    # Combined feed cards (start.me + Brutalist, no source labels)
+    feed_cards = ""
+    for item in STARTME_ITEMS:
+        feed_cards += (
+            f'<div class="feed-card">'
+            f'<a href="{esc(item["url"])}" target="_blank" rel="noopener">{esc(item["title"])}</a>'
+            f'<div class="feed-meta"><span>🗓 {esc(item["date"])}</span></div>'
+            f'</div>'
+        )
+    for item in BRUTALIST_ITEMS:
+        feed_cards += (
+            f'<div class="feed-card">'
+            f'<a href="{esc(item["url"])}" target="_blank" rel="noopener">{esc(item["title"])}</a>'
+            f'</div>'
+        )
+
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>DFIR Watchtower — {DATE_STR}</title>
+<style>{CSS}</style>
+</head>
+<body>
+<header>
+  <h1>🏰 DFIR Watchtower</h1>
+  <p class="sub">Weekly DFIR intelligence digest &mdash; <strong>{DATE_STR}</strong></p>
+  <div class="stats">
+    <div class="stat"><div class="v">{grand_total}</div><div class="l">Total Links</div></div>
+    <div class="stat"><div class="v">{tw4n6_curated}</div><div class="l">Curated Links</div></div>
+    <div class="stat"><div class="v">{radar_total}</div><div class="l">Radar Links</div></div>
+    <div class="stat"><div class="v">{num_sections}</div><div class="l">Categories</div></div>
+    <div class="stat"><div class="v">{NOW.strftime("%H:%M UTC")}</div><div class="l">Pulled</div></div>
+  </div>
+</header>
+<nav>{nav_html}</nav>
+<main>
+
+<!-- ═══ WEEKLY CURATED ═══ -->
+<div class="source-block">
+  {tw4n6_html}
+</div>
+
+<!-- ═══ INTEL FEED ═══ -->
+<div class="source-block">
+  {render_radar_sections()}
+</div>
+
+<!-- ═══ RECENT FEED ═══ -->
+<div class="source-block" id="feed">
   <div class="week-head" style="margin-bottom:.75rem">
     <h3>Recent Feed</h3>
-    <span class="meta">Latest community items &amp; tech news</span>
+    <span class="meta">{total_feed} items</span>
   </div>
-  <ul class="link-list feed-list">
-{rows}
-  </ul>
-</div>'''
+  {feed_cards}
+</div>
 
-
-def render_community():
-    cards = '\n'.join(f'''    <a href="{c["url"]}" class="community-card" style="border-color:{c["color"]}" target="_blank" rel="noopener">
-      <div class="cname">{esc(c["name"])}</div>
-      <div class="cmembers">{esc(c["members"])} members</div>
-      <div class="cdesc">{esc(c["description"])}</div>
-    </a>''' for c in COMMUNITY_CHANNELS)
-    return f'''<div class="source-block" id="community">
+<!-- ═══ COMMUNITY CHANNELS ═══ -->
+<div class="source-block" id="community">
   <div class="week-head" style="margin-bottom:.75rem">
     <h3>Community Channels</h3>
     <span class="meta">DFIR &amp; security subreddits worth following</span>
   </div>
   <div class="community-grid">
-{cards}
+    {community_cards}
   </div>
-</div>'''
-
-
-def render_digest(weeks, startme_items, brutalist_items, now):
-    w_latest = weeks[0]
-    total_links = sum(w["total"] for w in weeks) + len(startme_items) + len(brutalist_items)
-    curated = sum(w["total"] for w in weeks)
-    date_str = now.strftime("%Y-%m-%d %H:%M UTC")
-
-    # Nav
-    nav_parts = []
-    for sec in w_latest["sections"]:
-        h = sec["heading"]
-        slug = cat_slug(h)
-        color = SECTION_COLORS.get(h, "#475569")
-        label = h.title().replace(" / ", "/")
-        nav_parts.append(f'<a href="#cat-{slug}" style="color:{color};border-bottom:2px solid {color};padding-bottom:2px">{esc(label)}</a>')
-    nav_parts.append('<a href="#feed" style="color:var(--mut)">Recent Feed</a>')
-    nav_parts.append('<a href="#community" style="color:#f59e0b">Community</a>')
-    nav_html = '\n      '.join(nav_parts)
-
-    weeks_html = '\n'.join(render_week(w, i == 0) for i, w in enumerate(weeks))
-    feed_html = render_feed(startme_items, brutalist_items)
-    community_html = render_community()
-
-    return f'''<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>🏰 DFIR Watchtower — {esc(now.strftime("%B %d, %Y"))}</title>
-<style>
-:root{{
-  --bg:#0f172a;--s1:#1e293b;--s2:#334155;--acc:#38bdf8;
-  --txt:#e2e8f0;--mut:#94a3b8;--bdr:#2d3f55;
-}}
-*{{box-sizing:border-box;margin:0;padding:0}}
-body{{background:var(--bg);color:var(--txt);font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;line-height:1.6}}
-a{{color:var(--acc);text-decoration:none}}
-a:hover{{text-decoration:underline}}
-header{{background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%);border-bottom:1px solid var(--bdr);padding:1.5rem 2rem}}
-header h1{{font-size:1.8rem;font-weight:800;letter-spacing:-.03em}}
-.stats-bar{{display:flex;gap:1.5rem;flex-wrap:wrap;padding:.75rem 2rem;background:var(--s1);border-bottom:1px solid var(--bdr)}}
-.stat{{display:flex;flex-direction:column;align-items:center}}
-.stat-val{{font-size:1.3rem;font-weight:700;color:var(--acc)}}
-.stat-lbl{{font-size:.7rem;color:var(--mut);text-transform:uppercase;letter-spacing:.06em}}
-nav{{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.95);backdrop-filter:blur(8px);
-  border-bottom:1px solid var(--bdr);padding:.6rem 2rem;display:flex;flex-wrap:wrap;gap:.8rem;align-items:center}}
-nav a{{font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;text-decoration:none;transition:opacity .15s;white-space:nowrap}}
-nav a:hover{{opacity:.7}}
-main{{max-width:1200px;margin:0 auto;padding:1.5rem 2rem;display:flex;flex-direction:column;gap:1.25rem}}
-.source-block{{background:var(--s1);border:1px solid var(--bdr);border-radius:12px;padding:1.25rem 1.5rem}}
-.week-head{{display:flex;align-items:baseline;gap:.75rem;margin-bottom:1rem;flex-wrap:wrap}}
-.week-head h3{{font-size:1.1rem;font-weight:700;color:#f1f5f9}}
-.badge-new{{background:#16a34a;color:#fff;font-size:.65rem;font-weight:700;padding:.15rem .5rem;border-radius:4px;letter-spacing:.05em;text-transform:uppercase}}
-.meta{{font-size:.78rem;color:var(--mut)}}
-.section-block{{margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid var(--bdr)}}
-.section-block:last-child{{border-bottom:none;margin-bottom:0;padding-bottom:0}}
-.section-head{{display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem}}
-.sec-badge{{font-size:.7rem;font-weight:700;color:#fff;padding:.2rem .55rem;border-radius:4px;letter-spacing:.04em;text-transform:uppercase}}
-.sec-count{{font-size:.72rem;color:var(--mut);background:var(--s2);padding:.1rem .4rem;border-radius:3px}}
-.link-list{{list-style:none;display:flex;flex-direction:column;gap:.2rem}}
-.link-list li a{{font-size:.82rem;color:#cbd5e1;line-height:1.5}}
-.link-list li a:hover{{color:var(--acc)}}
-.feed-list{{columns:2;column-gap:1.5rem}}
-.feed-list li{{break-inside:avoid;margin-bottom:.2rem}}
-.community-grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:.9rem;margin-top:.75rem}}
-.community-card{{background:var(--bg);border-radius:10px;padding:1rem 1.1rem;border-left:4px solid;transition:transform .15s,box-shadow .15s;text-decoration:none !important;display:block}}
-.community-card:hover{{transform:translateY(-2px);box-shadow:0 4px 20px rgba(0,0,0,.4)}}
-.community-card .cname{{font-weight:700;font-size:.95rem;color:var(--acc);margin-bottom:.25rem}}
-.community-card .cmembers{{font-size:.7rem;color:var(--mut);margin-bottom:.4rem}}
-.community-card .cdesc{{font-size:.82rem;color:var(--txt);line-height:1.45}}
-footer{{text-align:center;padding:1.5rem;color:var(--mut);font-size:.75rem;border-top:1px solid var(--bdr);margin-top:1rem}}
-@media(max-width:640px){{.feed-list{{columns:1}}.stats-bar{{gap:.75rem}}nav{{gap:.5rem}}}}
-</style>
-</head>
-<body>
-<header>
-  <h1>🏰 DFIR Watchtower</h1>
-  <p style="color:var(--mut);font-size:.85rem;margin-top:.3rem">Weekly intelligence digest — curated from the frontlines of DFIR</p>
-</header>
-
-<div class="stats-bar">
-  <div class="stat"><span class="stat-val">{total_links}</span><span class="stat-lbl">Total Links</span></div>
-  <div class="stat"><span class="stat-val">{curated}</span><span class="stat-lbl">Curated Links</span></div>
-  <div class="stat"><span class="stat-val">{len(weeks)}</span><span class="stat-lbl">Weeks Covered</span></div>
-  <div class="stat"><span class="stat-val">{len(w_latest["sections"])}</span><span class="stat-lbl">Categories</span></div>
-  <div class="stat"><span class="stat-val" style="font-size:.85rem">{esc(date_str)}</span><span class="stat-lbl">Pulled</span></div>
 </div>
 
-<nav>
-      {nav_html}
-</nav>
-
-<main>
-{weeks_html}
-{feed_html}
-{community_html}
 </main>
-
 <footer>
-  🏰 DFIR Watchtower — {esc(date_str)} — <a href="https://github.com/forensicfellowship/DFIR_Watchtower">github.com/forensicfellowship/DFIR_Watchtower</a>
+  🏰 <strong>DFIR Watchtower</strong> &mdash; {TIMESTAMP} &mdash;
+  <a href="https://github.com/forensicfellowship/DFIR_Watchtower">github.com/forensicfellowship/DFIR_Watchtower</a>
 </footer>
 </body>
-</html>'''
+</html>"""
 
-# ─── MAIN ────────────────────────────────────────────────────────────────────
+# ── Write output ───────────────────────────────────────────────────────────
+base = Path("/sessions/epic-optimistic-franklin/mnt/DFIR watchtower")
+content = render_digest()
 
-if __name__ == "__main__":
-    import sys
-    NOW = datetime.now(timezone.utc)
-    DATE_STR = NOW.strftime("%Y-%m-%d")
+# Dated archive copy
+dated_path = base / f"watchtower_digest_{DATE_STR}.html"
+dated_path.write_text(content, encoding="utf-8")
 
-    print("Parsing weeks...", file=sys.stderr)
-    w13 = parse_week(W13_RAW)
-    w12 = parse_week(W12_RAW)
-    w11 = parse_week(W11_RAW)
+# index.html — always the latest, served by GitHub Pages
+index_path = base / "index.html"
+index_path.write_text(content, encoding="utf-8")
 
-    for w in [w13, w12, w11]:
-        print(f"  {w['name']}: {len(w['sections'])} sections, {w['total']} items", file=sys.stderr)
-
-    weeks = [w13, w12, w11]
-    total = sum(w["total"] for w in weeks) + len(STARTME_ITEMS) + len(BRUTALIST_ITEMS)
-    print(f"Total links: {total}", file=sys.stderr)
-
-    content = render_digest(weeks, STARTME_ITEMS, BRUTALIST_ITEMS, NOW)
-
-    import os
-    base = Path("/sessions/trusting-brave-einstein/mnt/DFIR watchtower")
-    base.mkdir(parents=True, exist_ok=True)
-
-    out_dated = base / f"watchtower_digest_{DATE_STR}.html"
-    out_index = base / "index.html"
-    script_dst = base / "build_full_digest.py"
-
-    out_dated.write_text(content, encoding="utf-8")
-    out_index.write_text(content, encoding="utf-8")
-    print(f"Written: {out_dated}", file=sys.stderr)
-    print(f"Written: {out_index}", file=sys.stderr)
-
-    # Copy this script to workspace
-    import shutil
-    shutil.copy(__file__, script_dst)
-    print(f"Script saved: {script_dst}", file=sys.stderr)
-    print(f"SUCCESS — {len(content)} bytes, {total} total links", file=sys.stderr)
+tw4n6_total = sum(len(s["items"]) for s in W12["sections"])
+print(f"✅  Written {len(content):,} chars")
+print(f"    Dated   → {dated_path}")
+print(f"    Live    → {index_path}  (GitHub Pages)")
+print(f"    This Week in 4n6 : {tw4n6_total} links (Week 12, {len(W12['sections'])} sections)")
+print(f"    DFIR Radar RSS   : {len(DFIR_RADAR_ITEMS)} links ({len({i['cat'] for i in DFIR_RADAR_ITEMS})} categories)")
+print(f"    start.me Feed    : {len(STARTME_ITEMS)} items")
+print(f"    Brutalist Report : {len(BRUTALIST_ITEMS)} items")
+print(f"    GRAND TOTAL      : {tw4n6_total + len(DFIR_RADAR_ITEMS) + len(STARTME_ITEMS) + len(BRUTALIST_ITEMS)} links")
