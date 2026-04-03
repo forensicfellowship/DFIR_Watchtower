@@ -665,8 +665,6 @@ def render_digest():
   <p class="sub">Weekly DFIR intelligence digest &mdash; <strong>{DATE_STR}</strong></p>
   <div class="stats">
     <div class="stat"><div class="v">{grand_total}</div><div class="l">Total Links</div></div>
-    <div class="stat"><div class="v">{tw4n6_curated}</div><div class="l">Curated Links</div></div>
-    <div class="stat"><div class="v">{radar_total}</div><div class="l">Radar Links</div></div>
     <div class="stat"><div class="v">{num_sections}</div><div class="l">Categories</div></div>
     <div class="stat"><div class="v">{NOW.strftime("%H:%M UTC")}</div><div class="l">Pulled</div></div>
   </div>
