@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>🏰 DFIR Watchtower — 2026-05-04</title>
+<style>
+:root{
+  --bg:#0f1117;--s1:#1a1d27;--s2:#22263a;
+  --txt:#e2e8f0;--mut:#64748b;--acc:#38bdf8;
+  --brd:#2d3748;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:'Inter',system-ui,-apple-system,sans-serif;font-size:14px;line-height:1.6}
+a{color:var(--acc);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* header */
+.site-header{background:linear-gradient(135deg,#1e293b 0%,#0f172a 100%);border-bottom:1px solid var(--brd);padding:1.5rem 2rem 1.25rem}
+.site-header h1{font-size:1.65rem;font-weight:800;letter-spacing:-.02em;color:#f8fafc}
+.site-header h1 span{color:var(--acc)}
+.site-header .tagline{color:var(--mut);font-size:.8rem;margin-top:.2rem}
+
+/* stats bar */
+.stats-bar{display:flex;gap:1.5rem;flex-wrap:wrap;padding:.9rem 2rem;background:var(--s1);border-bottom:1px solid var(--brd)}
+.stat{display:flex;flex-direction:column}
+.stat .val{font-size:1.3rem;font-weight:700;color:var(--acc);line-height:1}
+.stat .lbl{font-size:.7rem;color:var(--mut);text-transform:uppercase;letter-spacing:.06em}
+
+/* sticky nav */
+nav{position:sticky;top:0;z-index:99;background:var(--s1);border-bottom:1px solid var(--brd);padding:.65rem 2rem;display:flex;gap:1.1rem;flex-wrap:wrap;align-items:center}
+nav a{font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;text-decoration:none;transition:opacity .15s;white-space:nowrap}
+nav a:hover{opacity:.7}
+
+/* main layout */
+main{max-width:1100px;margin:0 auto;padding:1.5rem 2rem}
+
+/* blocks */
+.source-block{background:var(--s1);border-radius:12px;padding:1.25rem 1.4rem;margin-bottom:1.5rem;border:1px solid var(--brd)}
+.week-head{display:flex;align-items:baseline;gap:.75rem;flex-wrap:wrap;margin-bottom:1rem;border-bottom:1px solid var(--brd);padding-bottom:.75rem}
+.week-head h3{font-size:1.05rem;font-weight:700}
+.week-head h3 a{color:var(--txt)}
+.week-head h3 a:hover{color:var(--acc)}
+.meta{color:var(--mut);font-size:.78rem}
+
+/* latest badge */
+.badge-new{background:#0e7490;color:#fff;font-size:.62rem;font-weight:700;padding:.15rem .45rem;border-radius:4px;text-transform:uppercase;letter-spacing:.06em;vertical-align:middle;margin-left:.3rem}
+
+/* section blocks */
+.section-block{margin-bottom:1.1rem}
+.section-head{display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem}
+.cat-badge{font-size:.7rem;font-weight:700;padding:.2rem .55rem;border-radius:5px;text-transform:uppercase;letter-spacing:.05em}
+.item-count{font-size:.72rem;color:var(--mut)}
+
+/* link list */
+.link-list{list-style:none;display:flex;flex-direction:column;gap:.25rem;padding-left:.25rem}
+.link-list li{border-left:2px solid var(--brd);padding-left:.6rem}
+.link-list li a{color:#cbd5e1;font-size:.83rem}
+.link-list li a:hover{color:var(--acc)}
+
+/* feed section */
+#feed .source-block{background:var(--s2)}
+#feed .link-list li a{color:#94a3b8}
+
+/* community */
+.community-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:.9rem;margin-top:.75rem}
+.community-card{background:var(--s1);border-radius:10px;padding:1rem 1.1rem;border-left:4px solid;transition:transform .15s,box-shadow .15s;text-decoration:none;display:block}
+.community-card:hover{transform:translateY(-2px);box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.community-card .cname{font-weight:700;font-size:.95rem;color:var(--acc);margin-bottom:.25rem}
+.community-card .cmembers{font-size:.7rem;color:var(--mut);margin-bottom:.4rem}
+.community-card .cdesc{font-size:.82rem;color:var(--txt);line-height:1.45}
+
+/* section headers */
+.section-title{font-size:.95rem;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin:2rem 0 .75rem;padding-bottom:.4rem;border-bottom:1px solid var(--brd)}
+
+footer{text-align:center;padding:2rem;color:var(--mut);font-size:.75rem;border-top:1px solid var(--brd);margin-top:2rem}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <h1>🏰 DFIR <span>Watchtower</span></h1>
+  <div class="tagline">Weekly intelligence digest for digital forensics &amp; incident response professionals</div>
+</header>
+
+<div class="stats-bar">
+  <div class="stat"><span class="val">153</span><span class="lbl">Total Links</span></div>
+  <div class="stat"><span class="val">127</span><span class="lbl">Curated Links</span></div>
+  <div class="stat"><span class="val" style="font-size:.85rem">May 3, 2026</span><span class="lbl">Edition</span></div>
+  <div class="stat"><span class="val">7</span><span class="lbl">Categories</span></div>
+  <div class="stat"><span class="val" style="font-size:.85rem">2026-05-04 14:12 UTC</span><span class="lbl">Pulled</span></div>
+</div>
+
+<nav>
+  <a href="#cat-forensic-analysis" style="color:#0e7490;border-bottom:2px solid #0e7490;padding-bottom:2px">Forensic Analysis</a>
+      <a href="#cat-threat-intelligence-hunting" style="color:#dc2626;border-bottom:2px solid #dc2626;padding-bottom:2px">Threat Intelligence/Hunting</a>
+      <a href="#cat-upcoming-events" style="color:#7c3aed;border-bottom:2px solid #7c3aed;padding-bottom:2px">Upcoming Events</a>
+      <a href="#cat-presentations-podcasts" style="color:#2563eb;border-bottom:2px solid #2563eb;padding-bottom:2px">Presentations/Podcasts</a>
+      <a href="#cat-malware" style="color:#b45309;border-bottom:2px solid #b45309;padding-bottom:2px">Malware</a>
+      <a href="#cat-miscellaneous" style="color:#047857;border-bottom:2px solid #047857;padding-bottom:2px">Miscellaneous</a>
+      <a href="#cat-software-updates" style="color:#1d4ed8;border-bottom:2px solid #1d4ed8;padding-bottom:2px">Software Updates</a>
+      <a href="#feed" style="color:var(--mut)">Recent Feed</a>
+      <a href="#community" style="color:#f59e0b">Community</a>
+</nav>
+
+<main>
+  <div class="section-title">📋 Curated Intelligence</div>
+  
+  <div class="source-block">
+    <div class="week-head">
+      <h3><a href="https://thisweekin4n6.com/2026/05/03/week-18-2026/" target="_blank">May 3, 2026</a>
+        <span class="badge-new">LATEST</span>
+      </h3>
+      <span class="meta">127 links</span>
+    </div>
+
+    <div class="section-block" id="cat-forensic-analysis">
+      <div class="section-head">
+        <span class="cat-badge" style="background:#0e749020;color:#0e7490;border:1px solid #0e749040">Forensic Analysis</span>
+        <span class="item-count">9 items</span>
+      </div>
+      <ul class="link-list">
+        <li><a href="https://www.linkedin.com/pulse/digital-forensic-view-how-ios-15-lets-you-change-photo-andrew-garrett-jekle/" target="_blank" rel="noopener">A Digital Forensic View: How iOS 15+ Lets You Change Photo &amp; Video Timestamps (And What It Really Means)</a></li>
+        <li><a href="https://www.cybertriage.com/blog/dfir-ai-using-local-llms-with-dfir-mcp-servers/" target="_blank" rel="noopener">DFIR + AI: Using Local LLMs with DFIR MCP Servers</a></li>
+        <li><a href="https://hackerfactor.com/blog/index.php?/archives/1093-SEAL-and-JavaScript.html" target="_blank" rel="noopener">SEAL and JavaScript</a></li>
+        <li><a href="https://bebinary4n6.blogspot.com/2026/05/what-hides-in-wal-sqlite-forensics-with.html" target="_blank" rel="noopener">What Hides in the WAL — SQLite Forensics with crush</a></li>
+        <li><a href="https://blog.elcomsoft.com/2026/04/digital-triage-masterclass/" target="_blank" rel="noopener">Digital Triage Masterclass</a></li>
+        <li><a href="https://blog.elcomsoft.com/2026/04/new-and-updated-security-features-in-ios-26-and-their-forensic-implications/" target="_blank" rel="noopener">New Security Features and Low-Level Extraction of iOS 26</a></li>
+        <li><a href="https://blog.elcomsoft.com/2026/04/elcomsoft-phone-breaker-11-restores-icloud-access/" target="_blank" rel="noopener">Elcomsoft Phone Breaker 11 Restores iCloud Access</a></li>
+        <li><a href="https://sumuri.com/what-your-mac-forensic-tool-isnt-telling-you-about-metadata/" target="_blank" rel="noopener">What Your Mac Forensic Tool Isn’t Telling You About Metadata</a></li>
+        <li><a href="https://vikas891.github.io/posts/secrets-and-shadows/" target="_blank" rel="noopener">Hunting NTDS.dit Theft via VSS &amp; NTFS Logs</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="cat-threat-intelligence-hunting">
+      <div class="section-head">
+        <span class="cat-badge" style="background:#dc262620;color:#dc2626;border:1px solid #dc262640">Threat Intelligence/Hunting</span>
+        <span class="item-count">44 items</span>
+      </div>
+      <ul class="link-list">
+        <li><a href="https://arcticwolf.com/resources/blog-uk/bluenoroff-uses-clickfix-fileless-powershell-ai-generated-fake-zoom-meetings-to-target-web3-sector/" target="_blank" rel="noopener">BlueNoroff Uses ClickFix, Fileless PowerShell, and AI-Generated Fake Zoom Meetings to Target Web3 Sector</a></li>
+        <li><a href="https://plausible-deniability.co/blog/PullingTheThread-DPRKWorkers/" target="_blank" rel="noopener">Pulling the Thread: Pivoting on DPRK IT Worker Infrastructure</a></li>
+        <li><a href="https://blog.barracuda.com/2026/04/28/threat-spotlight--boutique-phishing-kit-saiga-2fa" target="_blank" rel="noopener">Threat Spotlight: Boutique phishing kit Saiga 2FA hides behind ‘lorem ipsum’ metadata</a></li>
+        <li><a href="https://www.blackhillsinfosec.com/bloodhound-data-collection/" target="_blank" rel="noopener">A Practical Guide to BloodHound Data Collection</a></li>
+        <li><a href="https://www.bleepingcomputer.com/news/security/inside-an-opsec-playbook-how-threat-actors-evade-detection/" target="_blank" rel="noopener">Inside an OPSEC Playbook: How Threat Actors Evade Detection</a></li>
+        <li><a href="https://www.malware-traffic-analysis.net/2026/04/22/index.html" target="_blank" rel="noopener">2026-04-22: Malicious ad leads to ClickFix-style page for macOS malware</a></li>
+        <li><a href="https://krebsonsecurity.com/2026/04/anti-ddos-firm-heaped-attacks-on-brazilian-isps/" target="_blank" rel="noopener">Anti-DDoS Firm Heaped Attacks on Brazilian ISPs</a></li>
+        <li><a href="https://research.checkpoint.com/2026/27th-april-threat-intelligence-report/" target="_blank" rel="noopener">27th April – Threat Intelligence Report</a></li>
+        <li><a href="https://research.checkpoint.com/2026/vect-ransomware-by-design-wiper-by-accident/" target="_blank" rel="noopener">VECT: Ransomware by design, Wiper by accident</a></li>
+        <li><a href="https://blog.talosintelligence.com/ai-powered-honeypots-turning-the-tables-on-malicious-ai-agents/" target="_blank" rel="noopener">AI-powered honeypots: Turning the tables on malicious AI agents</a></li>
+        <li><a href="https://cofense.com/blog/the-meta-2fa-trap-from-verified-badge-to-account-takeover" target="_blank" rel="noopener">The Meta 2FA Trap: From Verified Badge to Account Takeover</a></li>
+        <li><a href="https://www.coveware.com/blog/2026/4/27/patch-management-goes-from-hard-to-ludicrous-in-the-agentic-ai-era" target="_blank" rel="noopener">Patch management goes from hard, to ludicrous in the agentic AI era</a></li>
+        <li><a href="https://ctrlaltintel.com/research/Qilin/" target="_blank" rel="noopener">Watch Guard! Qilin affiliate exploits network appliances for initial access</a></li>
+        <li><a href="https://ctrlaltintel.com/research/SEA-CPanel/" target="_blank" rel="noopener">South-East Asian Military Entities Targeted via cPanel (CVE-2026-41940)</a></li>
+        <li><a href="https://www.cyfirma.com/news/weekly-intelligence-report-01-may-2026/" target="_blank" rel="noopener">Weekly Intelligence Report – 01 May 2026</a></li>
+        <li><a href="https://darkatlas.io/blog/in-depth-technical-analysis-of-vect-ransomware" target="_blank" rel="noopener">In-Depth Technical Analysis Of VECT Ransomware</a></li>
+        <li><a href="https://darkatlas.io/blog/beyond-ttps-a-better-way-to-attribute-apt-activity-through-campaign-linkage" target="_blank" rel="noopener">Beyond TTPs: A Better Way to Attribute APT Activity Through Campaign Linkage</a></li>
+        <li><a href="https://detect.fyi/the-life-dinner-principle-in-detection-822169d9da2c" target="_blank" rel="noopener">The Life-Dinner Principle in Detection</a></li>
+        <li><a href="https://detect.fyi/tuned-by-design-why-detection-engineering-needs-its-own-development-lifecycle-63a1118cb41d" target="_blank" rel="noopener">Tuned by Design: Why Detection Engineering Needs Its Own Development Lifecycle</a></li>
+        <li><a href="https://www.elastic.co/security-labs/detecting-cicd-pipeline-abuse-with-llm-augmented-analysis" target="_blank" rel="noopener">CI/CD pipeline abuse: the problem no one is watching</a></li>
+        <li><a href="https://www.elastic.co/security-labs/dfir-osquery-elastic-security" target="_blank" rel="noopener">DFIR: From alert to root cause using Osquery without leaving Elastic Security</a></li>
+        <li><a href="https://falconfeeds.io/blogs/manufacturing-ransomware-surge-april-2026-industrial-targets-analysis/" target="_blank" rel="noopener">Manufacturing Under Siege: Ransomware Convergence on Industrial Targets</a></li>
+        <li><a href="https://flare.io/learn/resources/blog/inside-the-floor-a-quantitative-analysis-of-1-year-exploit-forum-data" target="_blank" rel="noopener">Inside the Floor: A Quantitative Analysis of 1 Year Exploit Forum Data</a></li>
+        <li><a href="https://flare.io/learn/resources/blog/2026-world-cup-infostealer-pipeline" target="_blank" rel="noopener">From Pirated Software to Full Access to FIFA: Tracing the 2026 World Cup Infostealer Pipeline</a></li>
+        <li><a href="https://www.group-ib.com/blog/phoenix-phaas-kit-smishing/" target="_blank" rel="noopener">Phoenix Rising: Exposing the PhaaS Kit Behind Global Mass Phishing Campaigns</a></li>
+        <li><a href="https://www.infostealers.com/article/inside-the-coinbase-cartel-how-infostealer-credentials-fueled-a-100-company-ransomware-spree/" target="_blank" rel="noopener">Inside the Coinbase Cartel: How Infostealer Credentials Fueled a 100+ Company Ransomware Spree</a></li>
+        <li><a href="https://www.huntress.com/blog/ai-powered-attack-workflows" target="_blank" rel="noopener">Attackers Didn’t Wait for AI. They Built Workflows Around It.</a></li>
+        <li><a href="https://www.huntress.com/blog/codex-part-two" target="_blank" rel="noopener">Untangling a Linux Incident With an OpenAI Twist (Part 2)</a></li>
+        <li><a href="https://www.huntress.com/blog/clickfix-castleloader-backgroundfix" target="_blank" rel="noopener">ClickFix Removes Your Background but Leaves the Malware</a></li>
+        <li><a href="https://www.invictus-ir.com/news/atlas-lion-tactics-history-defenses" target="_blank" rel="noopener">Atlas Lion Threat Profile: History, Tactics &amp; Defenses</a></li>
+        <li><a href="https://www.microsoft.com/en-us/security/blog/2026/04/30/email-threat-landscape-q1-2026-trends-and-insights/" target="_blank" rel="noopener">Email threat landscape: Q1 2026 trends and insights</a></li>
+        <li><a href="https://www.microsoft.com/en-us/security/blog/2026/05/01/cve-2026-31431-copy-fail-vulnerability-enables-linux-root-privilege-escalation/" target="_blank" rel="noopener">CVE-2026-31431: Copy Fail vulnerability enables Linux root privilege escalation</a></li>
+        <li><a href="https://medium.com/mitre-attack/attack-v19-ff329cb65d66" target="_blank" rel="noopener">ATT&amp;CK v19: The Defense Evasion Split, ICS Sub-Techniques, New AI &amp; Social Engineering Coverage</a></li>
+        <li><a href="https://www.nebulock.io/blog/hunting-mcp-server-exploitations" target="_blank" rel="noopener">Hunt Mode: MCP Server Exploitations</a></li>
+        <li><a href="https://www.recordedfuture.com/blog/lazarus-does-not-need-agi" target="_blank" rel="noopener">Lazarus Doesn’t Need AGI</a></li>
+        <li><a href="https://reliaquest.com/blog/threat-spotlight-ransomware-and-cyber-extortion-in-q1-2026/" target="_blank" rel="noopener">Ransomware and Cyber Extortion in Q1 2026</a></li>
+        <li><a href="https://isc.sans.edu/diary/rss/32926" target="_blank" rel="noopener">TeamPCP Supply Chain Campaign: Update 008</a></li>
+        <li><a href="https://isc.sans.edu/diary/rss/32942" target="_blank" rel="noopener">Malicious Ad for Homebrew Leads to MacSync Stealer</a></li>
+        <li><a href="https://expel.com/blog/what-our-q1-2026-data-shows-part-one/" target="_blank" rel="noopener">How AI is reshaping the threat landscape – Q1 2026 data (part one)</a></li>
+        <li><a href="https://expel.com/blog/q1-2026-part-two/" target="_blank" rel="noopener">The AI threat actually worth worrying about from Q1 2026 (part two)</a></li>
+        <li><a href="https://www.wiz.io/blog/github-rce-vulnerability-cve-2026-3854" target="_blank" rel="noopener">Securing GitHub: Wiz Research uncovers RCE in GitHub.com (CVE-2026-3854)</a></li>
+        <li><a href="https://www.trendmicro.com/vinfo/us/security/news/vulnerabilities-and-exploits/update-on-exposed-mcp-servers-the-threat-widens-to-the-cloud" target="_blank" rel="noopener">Update on Exposed MCP Servers: The Threat Widens to the Cloud</a></li>
+        <li><a href="https://kudelskisecurity.com/research/mini-shai-hulud-supply-chain-attack" target="_blank" rel="noopener">Mini Shai-Hulud Supply Chain Attack – Kudelski Security Research</a></li>
+        <li><a href="https://www.wiz.io/blog/mini-shai-hulud-supply-chain-sap-npm" target="_blank" rel="noopener">Supply Chain Campaign Targets SAP npm Packages with Credential-Stealing Malware</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="cat-upcoming-events">
+      <div class="section-head">
+        <span class="cat-badge" style="background:#7c3aed20;color:#7c3aed;border:1px solid #7c3aed40">Upcoming Events</span>
+        <span class="item-count">8 items</span>
+      </div>
+      <ul class="link-list">
+        <li><a href="https://register.gotowebinar.com/rt/5995208548160709981" target="_blank" rel="noopener">ADF Weekly Mobile Training Sessions</a></li>
+        <li><a href="https://register.gotowebinar.com/rt/8364955173180524123" target="_blank" rel="noopener">ADF Weekly Computer Training Sessions</a></li>
+        <li><a href="https://cellebrite.com/en/resources/webinars/digital-evidence-is-now-central-to-vawg-investigations-are-your-investigators-equipped/" target="_blank" rel="noopener">Digital Evidence is Now Central to VAWG Investigations. Are Your Investigators Equipped?</a></li>
+        <li><a href="https://cellebrite.com/en/resources/webinars/the-digital-trail-doesnt-lie-but-you-have-to-know-where-to-look/" target="_blank" rel="noopener">The Digital Trail Doesn’t Lie. But You Have to Know Where to Look.</a></li>
+        <li><a href="https://www.youtube.com/watch?v=Rg4gFAY7IQc" target="_blank" rel="noopener">EvilTokens: Big Cybercrime’s AI Platform Built to Bypass Your MFA</a></li>
+        <li><a href="https://www.magnetforensics.com/resources/s3e2-ir-beyond-malware-investigating-business-email-compromise-and-fraud/" target="_blank" rel="noopener">Cyber Unpacked S3:E2 // IR Beyond Malware: Investigating BEC and Fraud</a></li>
+        <li><a href="https://www.youtube.com/watch?v=n0LFC2T9tV4" target="_blank" rel="noopener">Stay Ahead of Ransomware Livestream: May 2026</a></li>
+        <li><a href="https://go.spur.us/WebinarShackleford-WhenGoodIPsGoBad.html" target="_blank" rel="noopener">When Good IPs Go Bad</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="cat-presentations-podcasts">
+      <div class="section-head">
+        <span class="cat-badge" style="background:#2563eb20;color:#2563eb;border:1px solid #2563eb40">Presentations/Podcasts</span>
+        <span class="item-count">19 items</span>
+      </div>
+      <ul class="link-list">
+        <li><a href="https://www.youtube.com/watch?v=16Bf5gwtgPY" target="_blank" rel="noopener">Truth in Data: S2E8: Wish List! What We Want From DF Tool Providers</a></li>
+        <li><a href="https://www.youtube.com/watch?v=4ok4e0Jvy_4" target="_blank" rel="noopener">Getting Started with AI for Malware Analysis: Without Losing Control</a></li>
+        <li><a href="https://www.youtube.com/watch?v=dU7fIHo5zbg" target="_blank" rel="noopener">Challenge – RDP Bitmap Cache</a></li>
+        <li><a href="https://www.jamf.com/blog/mobile-forensics-closing-mobile-security-gap/" target="_blank" rel="noopener">Jamf After Dark: mobile forensics</a></li>
+        <li><a href="https://www.magnetforensics.com/resources/s4e4-demystifying-translation-features-of-ios-android/" target="_blank" rel="noopener">Mobile Unpacked S4:E4 // Demystifying translation features of iOS &amp; Android</a></li>
+        <li><a href="https://podcasters.spotify.com/pod/show/parsing-the-truth/episodes/Karen-Read-1-9-Richard-Green-Testimony-P1-e3ik5qo" target="_blank" rel="noopener">Karen Read 1-9: Richard Green Testimony P1</a></li>
+        <li><a href="https://www.youtube.com/watch?v=ZVmpK-9rP0Q" target="_blank" rel="noopener">Hunting Copy Fail: 732 Bytes to Root</a></li>
+        <li><a href="https://www.youtube.com/watch?v=S73Z7H0S1xQ" target="_blank" rel="noopener">A Guide to LNK File Forensics</a></li>
+        <li><a href="https://www.youtube.com/watch?v=z3W9gAW-hr4" target="_blank" rel="noopener">The Anatomy of a Modern Linux Attack</a></li>
+        <li><a href="https://www.youtube.com/watch?v=OfTDtT11g2M" target="_blank" rel="noopener">Where SOC Analysts Should Start With Windows Event Logs</a></li>
+        <li><a href="https://www.youtube.com/watch?v=9avSjDHKQ90" target="_blank" rel="noopener">Automated Reverse Engineering with LibGhidra, GhidraSQL, and AI Agents</a></li>
+        <li><a href="https://opensourcemalware.com/blog/opensourcemalware-show-episode02" target="_blank" rel="noopener">OpenSourceMalware Show Episode #2 – April 30, 2026</a></li>
+        <li><a href="https://opensourcemalware.com/blog/opensourcemalware-show-episode01" target="_blank" rel="noopener">OpenSourceMalware Show Episode #1 – April 23, 2026</a></li>
+        <li><a href="https://www.youtube.com/watch?v=HCssqd9Jq3o" target="_blank" rel="noopener">The AI Zero-Day Engine, China’s Cyber Rise, and CI/CD Poisoning</a></li>
+        <li><a href="https://www.youtube.com/watch?v=H3BdgCekrjY" target="_blank" rel="noopener">Getting Adaptix C2 By Defender with Beatrice</a></li>
+        <li><a href="http://securityconversations.fireside.fm/cracking-fast16-sabotage-malware-mystery" target="_blank" rel="noopener">Cracking the Fast16 sabotage malware mystery</a></li>
+        <li><a href="https://www.youtube.com/watch?v=THIxrdeRr6o" target="_blank" rel="noopener">EvilTokens: The PhaaS Kit That Bypasses MFA</a></li>
+        <li><a href="https://www.youtube.com/watch?v=C_TGxDdFxPY" target="_blank" rel="noopener">05 – Creating Position Independent Code using CALL $+5</a></li>
+        <li><a href="https://cqureacademy.com/blog/cqure-hacks-80-detecting-ddos-attacks-in-real-time-with-kql-azure-data-explorer/" target="_blank" rel="noopener">CQURE Hacks #80: Detecting DDoS Attacks in Real Time with KQL &amp; Azure Data Explorer</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="cat-malware">
+      <div class="section-head">
+        <span class="cat-badge" style="background:#b4530920;color:#b45309;border:1px solid #b4530940">Malware</span>
+        <span class="item-count">7 items</span>
+      </div>
+      <ul class="link-list">
+        <li><a href="https://bakerstreetforensics.com/2026/05/02/unmasking-the-moon-comparing-lunastealer-samples-with-malchela-and-claude/" target="_blank" rel="noopener">Unmasking the Moon: Comparing LunaStealer Samples with MalChela and Claude</a></li>
+        <li><a href="https://profero.io/blog/windowsaudit-backdoor/" target="_blank" rel="noopener">WindowsAudit Backdoor: Inside a .NET RAT That Hides in Discord</a></li>
+        <li><a href="https://securelist.com/silver-fox-tax-notification-campaign/119575/" target="_blank" rel="noopener">Silver Fox uses the new ABCDoor backdoor to target organizations in Russia and India</a></li>
+        <li><a href="https://www.securonix.com/blog/deepdoor-python-backdoor-and-credential-stealer/" target="_blank" rel="noopener">Deep#Door Stealer: Stealthy Python Backdoor and Credential Stealer Leveraging Tunneling</a></li>
+        <li><a href="https://medium.com/@shubhandrew/analysis-of-snowlight-dropper-20d57fe550e9" target="_blank" rel="noopener">Analysis of Snowlight Dropper</a></li>
+        <li><a href="https://cocomelonc.github.io/macos/2026/04/27/mac-malware-persistence-11.html" target="_blank" rel="noopener">MacOS malware persistence 11: osascript LOLBin</a></li>
+        <li><a href="https://id-ransomware.blogspot.com/2026/03/vect-ransomware.html" target="_blank" rel="noopener">Vect, Vect 2.0</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="cat-miscellaneous">
+      <div class="section-head">
+        <span class="cat-badge" style="background:#04785720;color:#047857;border:1px solid #04785740">Miscellaneous</span>
+        <span class="item-count">20 items</span>
+      </div>
+      <ul class="link-list">
+        <li><a href="https://cellebrite.com/en/blog/ai-generated-csam-stay-ahead-of-the-threat/" target="_blank" rel="noopener">AI-Generated CSAM: Staying Ahead of the Threat</a></li>
+        <li><a href="https://cellebrite.com/en/blog/7-data-collection-mistakes-that-compromise-corporate-investigations-and-how-to-avoid-them/" target="_blank" rel="noopener">7 Data Collection Mistakes That Compromise Corporate Investigations</a></li>
+        <li><a href="https://craigball.net/2026/05/01/a-refresh-of-the-annotated-esi-protocol/" target="_blank" rel="noopener">A Refresh of the Annotated ESI Protocol</a></li>
+        <li><a href="https://www.cybertriage.com/blog/aidfir-2026-challenge-the-good-vs-the-ugly/" target="_blank" rel="noopener">AI+DFIR 2026 Challenge: The Good vs The Ugly</a></li>
+        <li><a href="https://dfirdominican.com/dfir-jobs-update-04-27-26/" target="_blank" rel="noopener">DFIR Jobs Update – 04/27/26</a></li>
+        <li><a href="https://www.forensicfocus.com/news/register-free-for-forensics-europe-expo-2026/" target="_blank" rel="noopener">Register Free For Forensics Europe Expo 2026</a></li>
+        <li><a href="https://www.forensicfocus.com/jobs/digital-forensics-jobs-round-up-april-2026/" target="_blank" rel="noopener">Digital Forensics Jobs Round-Up, April 2026</a></li>
+        <li><a href="https://www.forensicfocus.com/news/magnet-forensics-unveils-magnet-ai-advancing-the-next-era-of-digital-investigative-intelligence/" target="_blank" rel="noopener">Magnet Forensics Unveils Magnet AI, Advancing The Next Era Of Digital Investigative Intelligence</a></li>
+        <li><a href="https://www.forensicfocus.com/news/magnet-forensics-redefines-digital-investigations-with-evolution-of-magnet-one/" target="_blank" rel="noopener">Magnet Forensics Redefines Digital Investigations With Evolution Of Magnet One</a></li>
+        <li><a href="https://www.forensicfocus.com/news/digital-forensics-round-up-april-29-2026/" target="_blank" rel="noopener">Digital Forensics Round-Up, April 29 2026</a></li>
+        <li><a href="https://lucidtruthtechnologies.com/fre-707-ai-evidence/" target="_blank" rel="noopener">FRE 707 AI Evidence: What Defense Attorneys Must Know Before Adoption</a></li>
+        <li><a href="https://www.stark4n6.com/2026/04/magnet-user-summit-2026-recap.html" target="_blank" rel="noopener">Magnet User Summit 2026 Recap</a></li>
+        <li><a href="https://zeltser.com/plant-honeytokens" target="_blank" rel="noopener">Plant Honeytokens to Detect Intrusions</a></li>
+        <li><a href="https://zeltser.com/decoy-mcp-server-honeypot" target="_blank" rel="noopener">Build a Decoy MCP Server to Catch AI Agent Attackers</a></li>
+        <li><a href="https://www.magnetforensics.com/blog/from-backlogs-to-breakthroughs-ais-role-in-evidence-review/" target="_blank" rel="noopener">From backlogs to breakthroughs: AI’s role in evidence review</a></li>
+        <li><a href="https://www.magnetforensics.com/blog/shadow-labs-and-the-case-for-purpose-driven-forensics/" target="_blank" rel="noopener">Shadow labs and the case for purpose‑driven forensics</a></li>
+        <li><a href="https://www.magnetforensics.com/blog/c2pa-and-media-authentication-what-you-need-to-know/" target="_blank" rel="noopener">C2PA and media authentication: What you need to know</a></li>
+        <li><a href="https://matthewplascencia.substack.com/p/data-recovery-with-testdisk-on-linux" target="_blank" rel="noopener">Data Recovery with testdisk on Linux</a></li>
+        <li><a href="https://dfirphilosophy.blogspot.com/2026/05/observations-in-land-of-experts.html" target="_blank" rel="noopener">Observations In The Land of Experts</a></li>
+        <li><a href="https://sentinel.blog/sentinel-as-code-wave-2/" target="_blank" rel="noopener">Sentinel-As-Code: Wave 2</a></li>
+      </ul>
+    </div>
+
+    <div class="section-block" id="cat-software-updates">
+      <div class="section-head">
+        <span class="cat-badge" style="background:#1d4ed820;color:#1d4ed8;border:1px solid #1d4ed840">Software Updates</span>
+        <span class="item-count">20 items</span>
+      </div>
+      <ul class="link-list">
+        <li><a href="https://github.com/CrowdStrike/falconpy/releases/tag/v1.6.2" target="_blank" rel="noopener">Falconpy Version 1.6.2</a></li>
+        <li><a href="https://github.com/dfir-iris/iris-web/releases/tag/v2.4.29" target="_blank" rel="noopener">IRIS-Web v2.4.29</a></li>
+        <li><a href="https://bakerstreetforensics.com/2026/05/01/the-long-game-malchela-v4-0/" target="_blank" rel="noopener">The Long Game: MalChela v4.0</a></li>
+        <li><a href="https://www.elcomsoft.com/news/880.html" target="_blank" rel="noopener">Elcomsoft Quick Triage receives a major update</a></li>
+        <li><a href="https://www.elcomsoft.com/news/881.html" target="_blank" rel="noopener">iOS Forensic Toolkit 10.02 adds agent-based extraction for iOS 26</a></li>
+        <li><a href="https://www.elcomsoft.com/news/882.html" target="_blank" rel="noopener">ElcomSoft Phone Breaker 11: full overhaul of iCloud extraction</a></li>
+        <li><a href="https://github.com/gchq/CyberChef/releases/tag/v11.0.0" target="_blank" rel="noopener">CyberChef v11.0.0</a></li>
+        <li><a href="https://github.com/LETHAL-FORENSICS/Microsoft-Analyzer-Suite/releases/tag/v1.7.1" target="_blank" rel="noopener">Microsoft-Analyzer-Suite v1.7.1</a></li>
+        <li><a href="https://bebinary4n6.blogspot.com/2026/05/crush-forensics-new-version-060-ist-out.html" target="_blank" rel="noopener">Crush-forensics new version – 0.6.0</a></li>
+        <li><a href="https://fec.metaspike.com/announcements/447871266" target="_blank" rel="noopener">Forensic Email Collector (FEC) Changelog – v4.4.787.1266</a></li>
+        <li><a href="https://github.com/microsoft/msticpy/releases/tag/v3.0.0" target="_blank" rel="noopener">msticpy MSTICPy 3.0.0 Release</a></li>
+        <li><a href="https://www.misp-project.org/2026/04/29/misp.2.5.37.released.html/" target="_blank" rel="noopener">MISP 2.5.37 – Templates, Assemble!</a></li>
+        <li><a href="https://github.com/OpenCTI-Platform/opencti/releases/tag/7.260430.0" target="_blank" rel="noopener">OpenCTI 7.260430.0</a></li>
+        <li><a href="https://github.com/Velocidex/velociraptor/releases/tag/v0.76.4" target="_blank" rel="noopener">Velociraptor v0.76.4</a></li>
+        <li><a href="https://dfir.blog/hindsight-parses-sessions-and-notifications/" target="_blank" rel="noopener">Hindsight v2026.04 Released!</a></li>
+        <li><a href="https://github.com/SigmaHQ/sigma/releases/tag/r2026-04-01" target="_blank" rel="noopener">Sigma Rule Set Release r2026-04-01</a></li>
+        <li><a href="https://github.com/volatilityfoundation/volatility3/releases/tag/v2.28.0" target="_blank" rel="noopener">Volatility 3 v2.28.0</a></li>
+        <li><a href="https://github.com/WithSecureLabs/chainsaw/releases/tag/v2.15.0" target="_blank" rel="noopener">Chainsaw v2.15.0</a></li>
+        <li><a href="https://www.x-ways.net/winhex/forum/messages/1/5537.html?1777459279" target="_blank" rel="noopener">X-Ways Forensics 21.8 Beta 4</a></li>
+        <li><a href="https://github.com/Yamato-Security/hayabusa/releases/tag/v3.9.0" target="_blank" rel="noopener">Hayabusa v3.9.0 – Showa Day Release</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="section-title" id="feed">⚡ Recent Tech &amp; Security Feed</div>
+  <div class="source-block" id="feed-block">
+    <ul class="link-list">
+    <li><a href="https://aboutdfir.com/infosec-news-nuggets-04-17-2026/" target="_blank" rel="noopener">InfoSec News Nuggets 04/17/2026</a></li>
+    <li><a href="https://aboutdfir.com/infosec-news-nuggets-04-16-2026/" target="_blank" rel="noopener">InfoSec News Nuggets 04/16/2026</a></li>
+    <li><a href="https://aboutdfir.com/infosec-news-nuggets-04-15-2026/" target="_blank" rel="noopener">InfoSec News Nuggets 04/15/2026</a></li>
+    <li><a href="https://aboutdfir.com/infosec-news-nuggets-04-14-2026/" target="_blank" rel="noopener">InfoSec News Nuggets 04/14/2026</a></li>
+    <li><a href="https://aboutdfir.com/infosec-news-nuggets-04-13-2026/" target="_blank" rel="noopener">InfoSec News Nuggets 04/13/2026</a></li>
+    <li><a href="https://bakerstreetforensics.com/2026/04/17/malchela-3-2-more-cowbell-more-intel/" target="_blank" rel="noopener">MalChela 3.2: More Cowbell? More Intel!</a></li>
+    <li><a href="https://www.cybertriage.com/blog/cyber-triage-3-17-use-cyber-triage-with-ai/" target="_blank" rel="noopener">Cyber Triage 3.17: Use AI to Enrich and Report your DFIR Artifacts</a></li>
+    <li><a href="https://www.cybertriage.com/ai/intro-to-mcp-servers-for-dfir-and-soc-investigations-using-ai/" target="_blank" rel="noopener">Intro to MCP Servers for DFIR and SOC Investigations using AI</a></li>
+    <li><a href="https://eclecticlight.co/2026/04/16/dfu-mode/" target="_blank" rel="noopener">DFU mode</a></li>
+    <li><a href="https://eclecticlight.co/2026/04/18/explainer-recovery/" target="_blank" rel="noopener">Explainer: Recovery</a></li>
+    <li><a href="https://eclecticlight.co/2026/04/19/last-week-on-my-mac-dont-be-a-victim-of-fraud/" target="_blank" rel="noopener">Last Week on My Mac: Don&#x27;t be a victim of fraud</a></li>
+    <li><a href="https://www.bleepingcomputer.com/news/security/critical-flaw-in-protobuf-library-enables-javascript-code-execution/" target="_blank" rel="noopener">Critical flaw in Protobuf library enables JavaScript code execution</a></li>
+    <li><a href="https://decipher.sc/2026/04/19/vercel-says-internal-systems-hit-in-breach/" target="_blank" rel="noopener">Vercel Says Internal Systems Hit in Breach</a></li>
+    <li><a href="https://michael.roth.rocks/research/543-hours/" target="_blank" rel="noopener">543 Hours: What happens when AI runs while you sleep</a></li>
+    <li><a href="https://arstechnica.com/space/2026/04/errant-upper-stage-spoils-blue-origins-success-in-reusing-new-glenn-booster/" target="_blank" rel="noopener">Blue Origin&#x27;s rocket reuse achievement marred by upper stage failure</a></li>
+    <li><a href="https://warontherocks.com/cogs-of-war/the-bromine-chokepoint-how-strife-in-the-middle-east-could-halt-production-of-the-worlds-memory-chips/" target="_blank" rel="noopener">The Bromine Chokepoint: How Strife Could Halt Production of World&#x27;s Memory Chips</a></li>
+    <li><a href="https://news.ycombinator.com/item?id=47825520" target="_blank" rel="noopener">Show HN: Google Gemini Is Scanning Your Photos – and the EU Said No</a></li>
+    <li><a href="https://github.com/navid-m/chip8emu" target="_blank" rel="noopener">I wrote a CHIP-8 emulator in my own programming language</a></li>
+    <li><a href="https://www.bbc.com/news/articles/czjw2kz0l22o" target="_blank" rel="noopener">Europe has &#x27;maybe six weeks of jet fuel left&#x27;</a></li>
+    <li><a href="https://finance.yahoo.com/sectors/technology/articles/ubers-anthropic-ai-push-hits-223109852.html" target="_blank" rel="noopener">Uber&#x27;s AI Push Hits a Wall–CTO Says Budget Struggles Despite $3.4B Spend</a></li>
+    <li><a href="https://www.ctvnews.ca/politics/article/pm-carney-declares-us-ties-now-a-weakness-in-address-to-canadians/" target="_blank" rel="noopener">PM Carney declares U.S. ties now a &#x27;weakness&#x27; in address to Canadians</a></li>
+    <li><a href="https://paulkrugman.substack.com/p/maga-is-winning-its-war-against-us" target="_blank" rel="noopener">MAGA Is Winning Its War Against U.S. Science</a></li>
+    <li><a href="https://lalitm.com/post/building-syntaqlite-ai/" target="_blank" rel="noopener">Eight Years of Wanting, Three Months of Building with AI</a></li>
+    <li><a href="https://www.forensicfocus.com/podcast/policings-well-being-problem-stigma-isolation-and-the-retention-crisis/" target="_blank" rel="noopener">Forensic Focus: Policing&#x27;s Well-Being Problem: Stigma, Isolation And The Retention Crisis</a></li>
+    <li><a href="https://g0njxa.medium.com/approaching-stealers-devs-a-brief-interview-with-notnullosx-ex-0xfff-4ca8f1600ac0?source=rss-f019d2b2d13f------2" target="_blank" rel="noopener">Approaching stealers devs: a brief interview with notnullOSX (ex-0xfff)</a></li>
+    <li><a href="https://github.com/bryan-ambrose/DFIR_Tools" target="_blank" rel="noopener">github.com/bryan-ambrose/DFIR_Tools</a></li>
+    </ul>
+  </div>
+
+  <div class="section-title" id="community-label">🛡️ Community Channels</div>
+  <div class="source-block" id="community">
+    <div class="week-head" style="margin-bottom:.75rem">
+      <h3>Community Channels</h3>
+      <span class="meta">DFIR &amp; security subreddits worth following</span>
+    </div>
+    <div class="community-grid">
+    <a class="community-card" href="https://www.reddit.com/r/computerforensics/" target="_blank" rel="noopener"
+       style="border-left-color:#0e7490">
+      <div class="cname">r/computerforensics</div>
+      <div class="cmembers">60k+ members</div>
+      <div class="cdesc">Case discussions, tool Q&amp;A, and career advice for digital forensics practitioners.</div>
+    </a>
+    <a class="community-card" href="https://www.reddit.com/r/blueteamsec/" target="_blank" rel="noopener"
+       style="border-left-color:#2563eb">
+      <div class="cname">r/blueteamsec</div>
+      <div class="cmembers">45k+ members</div>
+      <div class="cdesc">High-signal defensive security: threat intel, detection engineering, and incident response links.</div>
+    </a>
+    <a class="community-card" href="https://www.reddit.com/r/netsec/" target="_blank" rel="noopener"
+       style="border-left-color:#dc2626">
+      <div class="cname">r/netsec</div>
+      <div class="cmembers">500k+ members</div>
+      <div class="cdesc">Technical information security content — research papers, exploits, tooling, and write-ups.</div>
+    </a>
+    <a class="community-card" href="https://www.reddit.com/r/Malware/" target="_blank" rel="noopener"
+       style="border-left-color:#b45309">
+      <div class="cname">r/Malware</div>
+      <div class="cmembers">85k+ members</div>
+      <div class="cdesc">Malware analysis, reverse engineering samples, and threat actor discussions.</div>
+    </a>
+    <a class="community-card" href="https://www.reddit.com/r/cybersecurity/" target="_blank" rel="noopener"
+       style="border-left-color:#047857">
+      <div class="cname">r/cybersecurity</div>
+      <div class="cmembers">1M+ members</div>
+      <div class="cdesc">Broad security community: news, certifications, career paths, and industry happenings.</div>
+    </a>
+    <a class="community-card" href="https://www.reddit.com/r/ReverseEngineering/" target="_blank" rel="noopener"
+       style="border-left-color:#7c3aed">
+      <div class="cname">r/ReverseEngineering</div>
+      <div class="cmembers">200k+ members</div>
+      <div class="cdesc">Reversing tools, CTF write-ups, binary analysis, and low-level debugging techniques.</div>
+    </a>
+    </div>
+  </div>
+</main>
+
+<footer>🏰 DFIR Watchtower — 2026-05-04 14:12 UTC — github.com/forensicfellowship/DFIR_Watchtower</footer>
+
+</body>
+</html>
